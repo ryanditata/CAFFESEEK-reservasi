@@ -649,14 +649,14 @@ export default function OrdersIndex({ orders, products, filters }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Orders Management" />
+            <Head title="Manajemen Reservasi" />
 
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6">
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-semibold">Orders Management</h1>
-                        <p className="text-muted-foreground">Manage customer orders and create new orders</p>
+                        <h1 className="text-2xl font-semibold">Manajemen Reservasi</h1>
+                        <p className="text-muted-foreground">Kelola reservasi pelanggan dan buat reservasi baru</p>
                     </div>
 
                     <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>

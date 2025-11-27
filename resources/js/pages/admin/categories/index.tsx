@@ -163,14 +163,14 @@ export default function CategoriesIndex({ categories: initialCategories }: Props
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Categories Management" />
+            <Head title="Manajemen Kategori" />
 
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6">
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-semibold">Categories Management</h1>
-                        <p className="text-muted-foreground">Organize your products with categories</p>
+                        <h1 className="text-2xl font-semibold">Manajemen Kategori</h1>
+                        <p className="text-muted-foreground">Atur produk Anda dengan kategori</p>
                     </div>
 
                     <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>

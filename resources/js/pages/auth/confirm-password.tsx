@@ -14,6 +14,7 @@ export default function ConfirmPassword() {
         >
             <Head title="Confirm password" />
 
+          <div className='border-2 rounded-xl p-10'>
             <Form method="post" action={route('password.confirm')} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
                     <div className="space-y-6">
@@ -33,6 +34,8 @@ export default function ConfirmPassword() {
                     </div>
                 )}
             </Form>
+          </div>
+          
         </AuthLayout>
     );
 }

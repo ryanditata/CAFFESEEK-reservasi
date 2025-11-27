@@ -1,3 +1,4 @@
+import Lenis from "@studio-freight/lenis";
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Head, router } from '@inertiajs/react';
-import { ImageIcon, Minus, Plus, SearchIcon, ShoppingCart, Trash2 } from 'lucide-react';
+import { ImageIcon, Minus, Plus, SearchIcon, ClipboardList, Trash2, MapPin, ShoppingCart } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Types
@@ -55,6 +56,10 @@ interface Props {
     };
 }
 
+interface HeaderProps {
+  scrollToSection: (id: string) => void;
+}
+
 export default function CustomerIndex({ products: initialProducts, categories, pagination }: Props) {
     // State
     const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -69,6 +74,48 @@ export default function CustomerIndex({ products: initialProducts, categories, p
     const [hasMorePages, setHasMorePages] = useState(pagination?.has_more_pages || false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const observerRef = useRef<HTMLDivElement>(null);
+
+    // Scroll halus
+    const [offsetY, setOffsetY] = useState(0);
+    const lenisRef = useRef<Lenis | null>(null);
+
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            smoothWheel: true,
+        });
+        lenisRef.current = lenis;
+
+        function raf(time: number) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        function onScroll(e: any) {
+            setOffsetY(e.scroll);
+        }
+        lenis.on("scroll", onScroll);
+
+        return () => {
+            lenis.off("scroll", onScroll);
+            lenis.destroy();
+        };
+    }, []);
+
+    const scrollToSection = (id: string) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+                inline: "nearest",
+            });
+        }
+    };
 
     // Load cart from localStorage on mount
     useEffect(() => {
@@ -259,140 +306,203 @@ export default function CustomerIndex({ products: initialProducts, categories, p
 
     return (
         <div className="min-h-screen bg-background">
-            {/* Header */}
-            <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="container mx-auto px-4 md:py-1">
-                    <div className="flex items-center justify-between">
-                        <div className='flex items-center'>
-                            <img
-                                src="images/logo-navbar.png"
-                                alt="Icon Navbar"
-                                className="w-20 h-auto"
-                            />
-                            <div className="hidden md:block ml-4">
-                                <h1 className="text-2xl font-bold text-foreground">CAFFESEEK</h1>
-                                <p className="text-muted-foreground">Pilih Caffe & Resto Favorit Anda</p>
+        {/* Navbar */}
+        <header
+            className="w-full top-5 fixed z-99 bg-white/50 backdrop-blur-sm backdrop-saturate-250 flex items-center justify-between px-4 py-2 md:px-8 md:pt-[14px] md:pb-[14px] lg:px-[100px] lg:pt-[7px] lg:pb-[7px] xl:pt-[8px] xl:pb-[8px] h-fit rounded-full">
+            <button
+                onClick={(e) => {
+                e.preventDefault();
+                setIsOpen(false);
+                scrollToSection("hero-section");
+                }}
+                className="cursor-pointer object-cover w-20 md:w-25 lg:h-[80px] lg:w-[140px]"
+            >
+                <img
+                src="/images/logo-navbar.png"
+                alt="Logo"
+                className="lg:h-20 md:h-16 h-12"
+                />
+            </button>
+
+            <div className="relative w-[200px] md:w-sm lg:w-lg mr-10 md:mr-0 lg:mr-10">
+                <SearchIcon className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform" />
+                <Input placeholder="Cari Caffe & Resto" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 border-black" />
+            </div>
+
+            {/* Reservasi */}
+            <Dialog open={isCartModalOpen} onOpenChange={setIsCartModalOpen}>
+                <DialogTrigger asChild>
+                    <Button className="flex items-center justify-center text-black hover:text-white px-4 h-[43px] rounded-full bg-[#BDEE63] hover:bg-[#333333] transition duration-300 ease-in-out cursor-pointer relative">
+                        <ShoppingCart className="h-5 w-5" />
+                        {getTotalItems() > 0 && (
+                            <Badge className="absolute -top-1 -right-1 md:-top-2 md:-right-2 flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full p-0">
+                                {getTotalItems()}
+                            </Badge>
+                        )}
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="max-h-[80vh] max-w-sm md:mx-w-lg overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Keranjang</DialogTitle>
+                        <DialogDescription>Review keranjang Anda sebelum melakukan reservasi</DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        {cart.length === 0 ? (
+                            <div className="py-8 text-center">
+                                <ClipboardList className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                                <p className="text-muted-foreground">Keranjang Anda kosong</p>
                             </div>
-                        </div>
-
-                        {/* Cart Button */}
-                        <Dialog open={isCartModalOpen} onOpenChange={setIsCartModalOpen}>
-                            <DialogTrigger asChild>
-                                <Button className="relative">
-                                    <ShoppingCart className="mr-2 h-5 w-5" />
-                                    Keranjang
-                                    {getTotalItems() > 0 && (
-                                        <Badge className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full p-0">
-                                            {getTotalItems()}
-                                        </Badge>
-                                    )}
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-h-[80vh] max-w-md overflow-y-auto">
-                                <DialogHeader>
-                                    <DialogTitle>Keranjang</DialogTitle>
-                                    <DialogDescription>Review reservasi Anda sebelum melakukan checkout</DialogDescription>
-                                </DialogHeader>
-
-                                <div className="space-y-4">
-                                    {cart.length === 0 ? (
-                                        <div className="py-8 text-center">
-                                            <ShoppingCart className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                                            <p className="text-muted-foreground">Keranjang Anda kosong</p>
+                        ) : (
+                            <>
+                                {cart.map((item) => (
+                                    <div key={item.product.id} className="flex items-center space-x-4 rounded-lg border p-4">
+                                        <div className="h-16 w-16 flex-shrink-0">
+                                            {getPrimaryPhoto(item.product.photos) ? (
+                                                <img
+                                                    src={getPrimaryPhoto(item.product.photos)!}
+                                                    alt={item.product.name}
+                                                    className="h-full w-full rounded object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full w-full items-center justify-center rounded bg-muted">
+                                                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                                </div>
+                                            )}
                                         </div>
-                                    ) : (
-                                        <>
-                                            {cart.map((item) => (
-                                                <div key={item.product.id} className="flex items-center space-x-4 rounded-lg border p-4">
-                                                    <div className="h-16 w-16 flex-shrink-0">
-                                                        {getPrimaryPhoto(item.product.photos) ? (
-                                                            <img
-                                                                src={getPrimaryPhoto(item.product.photos)!}
-                                                                alt={item.product.name}
-                                                                className="h-full w-full rounded object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div className="flex h-full w-full items-center justify-center rounded bg-muted">
-                                                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                                            </div>
-                                                        )}
-                                                    </div>
 
-                                                    <div className="flex-grow">
-                                                        <h4 className="font-medium">{item.product.name}</h4>
-                                                        <p className="text-sm text-muted-foreground">{formatCurrency(item.product.price)}</p>
-                                                    </div>
+                                        <div className="flex-grow">
+                                            <h4 className="font-medium">{item.product.name}</h4>
+                                            <p className="text-sm text-muted-foreground">{formatCurrency(item.product.price)}</p>
+                                        </div>
 
-                                                    <div className="flex items-center space-x-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-8 w-8"
-                                                            onClick={() => updateCartItemQuantity(item.product.id, item.quantity - 1)}
-                                                        >
-                                                            <Minus className="h-4 w-4" />
-                                                        </Button>
+                                        <div className="flex items-center space-x-2">
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="h-8 w-8"
+                                                onClick={() => updateCartItemQuantity(item.product.id, item.quantity - 1)}
+                                            >
+                                                <Minus className="h-4 w-4" />
+                                            </Button>
 
-                                                        <span className="w-8 text-center">{item.quantity}</span>
+                                            <span className="w-8 text-center">{item.quantity}</span>
 
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-8 w-8"
-                                                            onClick={() => updateCartItemQuantity(item.product.id, item.quantity + 1)}
-                                                        >
-                                                            <Plus className="h-4 w-4" />
-                                                        </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="h-8 w-8"
+                                                onClick={() => updateCartItemQuantity(item.product.id, item.quantity + 1)}
+                                            >
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
 
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="icon"
-                                                            className="h-8 w-8"
-                                                            onClick={() => removeFromCart(item.product.id)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                            <Button
+                                                variant="destructive"
+                                                size="icon"
+                                                className="h-8 w-8"
+                                                onClick={() => removeFromCart(item.product.id)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
 
-                                            <div className="border-t pt-4">
-                                                <div className="flex items-center justify-between text-lg font-semibold">
-                                                    <span>Total:</span>
-                                                    <span>{formatCurrency(getTotalPrice())}</span>
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
+                                <div className="border-t pt-4">
+                                    <div className="flex items-center justify-between text-lg font-semibold">
+                                        <span>Total:</span>
+                                        <span>{formatCurrency(getTotalPrice())}</span>
+                                    </div>
                                 </div>
+                            </>
+                        )}
+                    </div>
 
-                                <DialogFooter className="flex-col space-y-2">
-                                    {cart.length > 0 && (
-                                        <>
-                                            <Button variant="outline" className="w-full" onClick={clearCart}>
-                                                Kosongkan Keranjang
-                                            </Button>
-                                            <Button className="w-full" onClick={goToCheckout}>
-                                                Lanjut ke Checkout ({getTotalItems()} item)
-                                            </Button>
-                                        </>
-                                    )}
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
+                    <DialogFooter className="flex-col space-y-2">
+                        {cart.length > 0 && (
+                            <>
+                                <Button variant="outline" className="w-full" onClick={clearCart}>
+                                    Kosongkan Keranjang
+                                </Button>
+                                <Button className="w-full" onClick={goToCheckout}>
+                                    Lanjut ke Reservasi ({getTotalItems()} item)
+                                </Button>
+                            </>
+                        )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </header>
+
+        {/* Hero */}
+        <div scrollToSection={scrollToSection} />
+            <section id="hero" className="relative min-h-screen md:min-h-[1100px] lg:min-h-screen overflow-hidden bg-[#FFFFFF]">
+                <div
+                    className="absolute top-0 left-0 w-full min-h-screen md:min-h-[1100px] lg:min-h-screen bg-cover bg-center"
+                    style={{
+                    backgroundImage: "url('/images/bg-hero2.svg')",
+                    transform: `translateY(${offsetY * 0.2}px)`,
+                    }}
+                >
+                </div>
+                <div className="h-screen flex justify-center items-center w-full relative">
+                    <div className="font-raleway flex flex-col items-center justify-center text-white">
+                    <div className="bg-[#333333] px-4 py-2 rounded-[48px] mb-4">
+                        <p className="font-bold">CAFFESEEK</p>
+                    </div>
+                    <h1 className="text-[28px] md:text-[54px] lg:text-[60px] mb-6 font-audiowide font-bold text-center leading-none">
+                        Temukan dan Pilih <br/> Caffe & Resto Favorit Anda
+                    </h1>
+                    <p className="px-6 md:px-0 font-semibold text-center text-[#BDEE63] text-lg md:text-xl mb-8 flex items-center justify-center gap-2">
+                        <MapPin className="h-5"/>
+                        Semarang, Indonesia.
+                    </p>
+                    <div className="flex gap-4 font-bold">
+                        <a
+                        onClick={() => scrollToSection("produk")}
+                        className="cursor-pointer rounded-3xl text-white bg-[#333333] px-6 py-3 hover:ring-2 ring-inset ring-white transition duration-300 ease-in-out"
+                        >
+                        Explore
+                        </a>
+                        <a
+                        href="/login"
+                        className="rounded-3xl text-black bg-white px-6 py-3 hover:bg-[#BDEE63] transition duration-300 ease-in-out"
+                        >
+                        Join Now!
+                        </a>
+                    </div>
                     </div>
                 </div>
-            </header>
+                <div
+                    className="absolute w-55 md:w-90 lg:w-100 bottom-[-0px] left-[10px] md:bottom-[-5px] md:left-[10px] lg:top-[250px] lg:left-2 z-30 opacity-25"
+                    style={{
+                    transform: `translateY(${offsetY * 0.3}px)`,
+                    }}
+                >
+                    <img src="/images/icon-store.svg" alt="" />
+                </div>
+
+                <div
+                    className="absolute w-[50%] md:w-[70%] lg:w-fit bottom-[-0px] right-[-0px] md:bottom-[-0px] md:right-[-240px] lg:bottom-[-25px] lg:right-0 z-30"
+                    style={{
+                    transform: `translateY(${offsetY * 0.3}px)`,
+                    }}
+                >
+                    <img src="/images/biji-kopi-kecil.svg" alt="" />
+                </div>
+                <div
+                    className="absolute bottom-0 left-0 w-full h-[80px] md:h-[120px] lg:h-[162.25px] bg-white z-20"
+                    style={{
+                    clipPath: "polygon(50% 100%, 100% 0, 100% 100%, 0 100%, 0 0)",
+                    }}>
+                </div>
+            </section>
 
             {/* Main Content */}
             <main className="container mx-auto px-4 py-6">
                 {/* Filters */}
                 <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-                    <div className="relative max-w-md">
-                        <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
-                        <Input placeholder="Cari menu..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
-                    </div>
-
                     <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                         <SelectTrigger className="w-[200px]">
                             <SelectValue placeholder="Semua Kategori" />
@@ -409,7 +519,7 @@ export default function CustomerIndex({ products: initialProducts, categories, p
                 </div>
 
                 {/* Products Grid */}
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     {filteredProducts.map((product) => {
                         const quantityInCart = getProductQuantityInCart(product.id);
 

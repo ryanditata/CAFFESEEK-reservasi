@@ -32,7 +32,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             className="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                         >
                             <ShoppingCart className="mr-3 h-5 w-5" />
-                            Kelola Order
+                            Kelola Reservasi
                         </Link>
 
                         <Link
@@ -40,7 +40,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             className="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                         >
                             <Package className="mr-3 h-5 w-5" />
-                            Produk
+                            Caffe & Resto
                         </Link>
 
                         <Link

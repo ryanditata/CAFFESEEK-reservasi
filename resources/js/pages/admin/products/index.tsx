@@ -371,14 +371,14 @@ export default function ProductsIndex({ products: initialProducts, categories, p
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Products Management" />
+            <Head title="Manajemen Caffe & Resto" />
 
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-6">
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl font-semibold">Products Management</h1>
-                        <p className="text-muted-foreground">Manage your product catalog</p>
+                        <h1 className="text-2xl font-semibold">Manajemen Caffe & Resto</h1>
+                        <p className="text-muted-foreground">Kelola katalog Caffe & Resto Anda</p>
                     </div>
 
                     <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
