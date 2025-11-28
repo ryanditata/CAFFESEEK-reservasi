@@ -1,85 +1,115 @@
 import Lenis from "@studio-freight/lenis";
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Carousel, CarouselContent, CarouselIndicators, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Head, router } from '@inertiajs/react';
-import { ImageIcon, Minus, Plus, SearchIcon, ClipboardList, Trash2, MapPin, ShoppingCart } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { router } from "@inertiajs/react";
+import {
+    Cigarette,
+    DoorClosed,
+    Loader2,
+    MapPin,
+    PlayCircle,
+    Plug,
+    RefreshCw,
+    SunMedium,
+    Users,
+    Wifi,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
-// Types
-interface Category {
+interface CafePhoto {
     id: number;
-    name: string;
-    created_at: string;
-    updated_at: string;
-}
-
-interface ProductPhoto {
-    id: number;
-    product_id: string;
     url: string;
     is_primary: boolean;
-    created_at: string;
-    updated_at: string;
 }
 
-interface Product {
-    id: string;
+interface CafeMenu {
+    id: number;
     name: string;
-    category_id: number;
+    category: string;
     price: number;
-    created_at: string;
-    updated_at: string;
-    category?: Category;
-    photos?: ProductPhoto[];
+    photo_url?: string | null;
 }
 
-interface CartItem {
-    product: Product;
-    quantity: number;
-    notes?: string;
+interface MeetingRoomFacility {
+    available: boolean;
+    capacity: number | null;
+}
+
+interface Facilities {
+    colokan: boolean;
+    wifi: boolean;
+    indoor: boolean;
+    outdoor: boolean;
+    smoking_area: boolean;
+    meeting_room: MeetingRoomFacility;
+}
+
+type OperationalHours = Record<string, string>;
+
+interface CafeDetail {
+    id: number;
+    name: string;
+    kategori: string;
+    description: string;
+    location: string;
+    latitude: number | null;
+    longitude: number | null;
+    video_url?: string | null;
+    operational_hours: OperationalHours;
+    facilities: Facilities;
+    photos: CafePhoto[];
+    menus: CafeMenu[];
 }
 
 interface Props {
-    products: Product[];
-    categories: Category[];
-    pagination?: {
-        current_page: number;
-        last_page: number;
-        per_page: number;
-        total: number;
-        has_more_pages: boolean;
-    };
+    cafes: CafeDetail[];
 }
 
-interface HeaderProps {
-  scrollToSection: (id: string) => void;
-}
+type FacilityKey = "colokan" | "wifi" | "indoor" | "outdoor" | "smoking_area" | "meeting_room";
 
-export default function CustomerIndex({ products: initialProducts, categories, pagination }: Props) {
-    // State
-    const [products, setProducts] = useState<Product[]>(initialProducts);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState<string>('all');
-    const [cart, setCart] = useState<CartItem[]>([]);
-    const [isCartModalOpen, setIsCartModalOpen] = useState(false);
+const PLACEHOLDER_IMAGE = "https://placehold.co/800x600/DFDFDF/333?text=CaffeSeek";
 
-    // Infinite scroll state
-    const [currentPage, setCurrentPage] = useState(pagination?.current_page || 1);
-    const [hasMorePages, setHasMorePages] = useState(pagination?.has_more_pages || false);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const observerRef = useRef<HTMLDivElement>(null);
+const facilityConfig: Record<
+    FacilityKey,
+    { label: string; icon: LucideIcon; getTrailingText?: (facilities: Facilities) => string | null }
+> = {
+    colokan: { label: "Colokan", icon: Plug },
+    wifi: { label: "WiFi", icon: Wifi },
+    indoor: { label: "Indoor", icon: DoorClosed },
+    outdoor: { label: "Outdoor", icon: SunMedium },
+    smoking_area: { label: "Smoking Area", icon: Cigarette },
+    meeting_room: {
+        label: "Meeting Room",
+        icon: Users,
+        getTrailingText: (facilities) =>
+            facilities.meeting_room.available && facilities.meeting_room.capacity
+                ? `${facilities.meeting_room.capacity} pax`
+                : null,
+    },
+};
 
-    // Scroll halus
+const currencyFormatter = new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+});
+
+const CafeSkeletonCard = () => (
+    <div className="animate-pulse rounded-3xl border border-gray-100 bg-white">
+        <div className="aspect-video w-full rounded-3xl rounded-b-none bg-gray-200" />
+        <div className="space-y-3 p-5">
+            <div className="h-4 w-24 rounded-full bg-gray-200" />
+            <div className="h-5 w-2/3 rounded-full bg-gray-200" />
+            <div className="h-4 w-full rounded-full bg-gray-200" />
+            <div className="h-10 w-full rounded-full bg-gray-200" />
+        </div>
+    </div>
+);
+
+export default function CustomerIndex({ cafes: initialCafes }: Props) {
     const [offsetY, setOffsetY] = useState(0);
-    const lenisRef = useRef<Lenis | null>(null);
-
-    const [isOpen, setIsOpen] = useState(false);
+    const [cafes, setCafes] = useState<CafeDetail[]>(initialCafes);
+    const [selectedCafe, setSelectedCafe] = useState<CafeDetail | null>(initialCafes[0] ?? null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     useEffect(() => {
         const lenis = new Lenis({
@@ -87,17 +117,15 @@ export default function CustomerIndex({ products: initialProducts, categories, p
             easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             smoothWheel: true,
         });
-        lenisRef.current = lenis;
 
-        function raf(time: number) {
+        const raf = (time: number) => {
             lenis.raf(time);
             requestAnimationFrame(raf);
-        }
+        };
+
         requestAnimationFrame(raf);
 
-        function onScroll(e: any) {
-            setOffsetY(e.scroll);
-        }
+        const onScroll = (e: { scroll: number }) => setOffsetY(e.scroll);
         lenis.on("scroll", onScroll);
 
         return () => {
@@ -106,535 +134,335 @@ export default function CustomerIndex({ products: initialProducts, categories, p
         };
     }, []);
 
+    useEffect(() => {
+        setCafes(initialCafes);
+        setSelectedCafe((prev) => {
+            if (!prev) {
+                return initialCafes[0] ?? null;
+            }
+            return initialCafes.find((cafe) => cafe.id === prev.id) ?? initialCafes[0] ?? null;
+        });
+    }, [initialCafes]);
+
+    const handleSelectCafe = (cafe: CafeDetail) => {
+        setSelectedCafe(cafe);
+        document.getElementById("detail-cafe")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
     const scrollToSection = (id: string) => {
         const el = document.getElementById(id);
         if (el) {
-            el.scrollIntoView({
-                behavior: "smooth",
-                block: "center",
-                inline: "nearest",
-            });
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
         }
     };
 
-    // Load cart from localStorage on mount
-    useEffect(() => {
-        const savedCart = localStorage.getItem('kasirku_cart');
-        if (savedCart) {
-            try {
-                setCart(JSON.parse(savedCart));
-            } catch (error) {
-                console.error('Error loading cart from localStorage:', error);
-                localStorage.removeItem('kasirku_cart');
-            }
-        }
-    }, []);
+    const operationalEntries = useMemo(
+        () => Object.entries(selectedCafe?.operational_hours ?? {}),
+        [selectedCafe?.operational_hours],
+    );
 
-    // Save cart to localStorage whenever it changes
-    useEffect(() => {
-        localStorage.setItem('kasirku_cart', JSON.stringify(cart));
-    }, [cart]);
+    const galleryPhotos = selectedCafe?.photos ?? [];
+    const primaryPhoto = galleryPhotos.find((photo) => photo.is_primary) ?? galleryPhotos[0];
 
-    // Update products when props change
-    useEffect(() => {
-        setProducts(initialProducts);
-        setCurrentPage(pagination?.current_page || 1);
-        setHasMorePages(pagination?.has_more_pages || false);
-    }, [initialProducts, pagination]);
-
-    // Debounce search term
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearchTerm(searchTerm);
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [searchTerm]);
-
-    // Filter products based on search term and category
-    const filteredProducts = products.filter((product) => {
-        const matchesSearch =
-            product.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-            product.category?.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-        const matchesCategory = categoryFilter === 'all' || product.category_id.toString() === categoryFilter;
-        return matchesSearch && matchesCategory;
-    });
-
-    // Load more products function
-    const loadMoreProducts = useCallback(async () => {
-        if (isLoadingMore || !hasMorePages) return;
-
-        setIsLoadingMore(true);
-
-        try {
-            const params = new URLSearchParams({
-                page: (currentPage + 1).toString(),
-            });
-
-            if (debouncedSearchTerm) {
-                params.append('search', debouncedSearchTerm);
-            }
-
-            if (categoryFilter && categoryFilter !== 'all') {
-                params.append('category', categoryFilter);
-            }
-
-            const response = await fetch(`/?${params.toString()}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    Accept: 'application/json',
-                },
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-
-                setProducts((prev) => [...prev, ...data.products]);
-                setCurrentPage(data.pagination.current_page);
-                setHasMorePages(data.pagination.has_more_pages);
-            }
-        } catch (error) {
-            console.error('Failed to load more products:', error);
-        } finally {
-            setIsLoadingMore(false);
-        }
-    }, [currentPage, hasMorePages, isLoadingMore, debouncedSearchTerm, categoryFilter]);
-
-    // Intersection Observer for infinite scroll
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting && hasMorePages && !isLoadingMore) {
-                    loadMoreProducts();
-                }
-            },
-            {
-                threshold: 0.1,
-                rootMargin: '100px',
-            },
-        );
-
-        if (observerRef.current) {
-            observer.observe(observerRef.current);
-        }
-
-        return () => {
-            if (observerRef.current) {
-                observer.unobserve(observerRef.current);
-            }
-        };
-    }, [loadMoreProducts, hasMorePages, isLoadingMore]);
-
-    // Reset pagination when search or filter changes
-    useEffect(() => {
-        // Reset products to initial when filtering
-        setProducts(initialProducts);
-        setCurrentPage(1);
-        setHasMorePages(pagination?.has_more_pages || false);
-    }, [debouncedSearchTerm, categoryFilter, initialProducts, pagination]);
-
-    // Format currency
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-        }).format(amount);
-    };
-
-    // Get primary photo
-    const getPrimaryPhoto = (photos: ProductPhoto[] = []) => {
-        if (photos.length === 0) return null;
-        const primary = photos.find((photo) => photo.is_primary);
-        return primary?.url || photos[0]?.url || null;
-    };
-
-    // Cart functions
-    const addToCart = (product: Product) => {
-        setCart((prevCart) => {
-            const existingItem = prevCart.find((item) => item.product.id === product.id);
-            if (existingItem) {
-                return prevCart.map((item) => (item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item));
-            } else {
-                return [...prevCart, { product, quantity: 1 }];
-            }
-        });
-    };
-
-    const updateCartItemQuantity = (productId: string, quantity: number) => {
-        if (quantity <= 0) {
-            removeFromCart(productId);
+    const handleReservationClick = () => {
+        if (!selectedCafe || typeof window === "undefined") {
             return;
         }
-
-        setCart((prevCart) => prevCart.map((item) => (item.product.id === productId ? { ...item, quantity } : item)));
+        window.open(`/reservasi?cafe=${selectedCafe.id}`, "_blank");
     };
 
-    const removeFromCart = (productId: string) => {
-        setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
-    };
-
-    const clearCart = () => {
-        setCart([]);
-    };
-
-    const getTotalPrice = () => {
-        return cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
-    };
-
-    const getTotalItems = () => {
-        return cart.reduce((total, item) => total + item.quantity, 0);
-    };
-
-    const getProductQuantityInCart = (productId: string) => {
-        const cartItem = cart.find((item) => item.product.id === productId);
-        return cartItem ? cartItem.quantity : 0;
-    };
-
-    const goToCheckout = () => {
-        console.log('Going to checkout with cart:', cart);
-
-        // Save current cart to localStorage before navigation
-        localStorage.setItem('kasirku_cart', JSON.stringify(cart));
-
-        // Verify cart was saved
-        const savedCart = localStorage.getItem('kasirku_cart');
-        console.log('Cart saved to localStorage:', savedCart);
-
-        setIsCartModalOpen(false);
-        router.visit('/checkout');
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+        router.reload({ only: ["cafes"] });
+        setIsRefreshing(false);
     };
 
     return (
-        <div className="min-h-screen bg-background">
-        {/* Navbar */}
-        <header
-            className="w-full top-5 fixed z-99 bg-white/50 backdrop-blur-sm backdrop-saturate-250 flex items-center justify-between px-4 py-2 md:px-8 md:pt-[14px] md:pb-[14px] lg:px-[100px] lg:pt-[7px] lg:pb-[7px] xl:pt-[8px] xl:pb-[8px] h-fit rounded-full">
-            <button
-                onClick={(e) => {
-                e.preventDefault();
-                setIsOpen(false);
-                scrollToSection("hero-section");
-                }}
-                className="cursor-pointer object-cover w-20 md:w-25 lg:h-[80px] lg:w-[140px]"
-            >
-                <img
-                src="/images/logo-navbar.png"
-                alt="Logo"
-                className="lg:h-20 md:h-16 h-12"
-                />
-            </button>
+        <div className="min-h-screen bg-background text-[#1F1F1F]">
+            <header className="w-full top-5 fixed z-[99] bg-white/90 backdrop-blur-xl shadow-xl flex items-center justify-between px-4 py-2 md:px-8 lg:px-[100px] h-fit rounded-full">
+                <button
+                    onClick={(e) => {
+                        e.preventDefault();
+                        scrollToSection("hero");
+                    }}
+                    className="cursor-pointer object-cover w-20 md:w-24 lg:h-[80px] lg:w-[140px]"
+                >
+                    <img src="/images/logo-navbar.png" alt="Logo" className="lg:h-20 md:h-16 h-12" />
+                </button>
+            </header>
 
-            <div className="relative w-[200px] md:w-sm lg:w-lg mr-10 md:mr-0 lg:mr-10">
-                <SearchIcon className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform" />
-                <Input placeholder="Cari Caffe & Resto" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 border-black" />
-            </div>
-
-            {/* Reservasi */}
-            <Dialog open={isCartModalOpen} onOpenChange={setIsCartModalOpen}>
-                <DialogTrigger asChild>
-                    <Button className="flex items-center justify-center text-black hover:text-white px-4 h-[43px] rounded-full bg-[#BDEE63] hover:bg-[#333333] transition duration-300 ease-in-out cursor-pointer relative">
-                        <ShoppingCart className="h-5 w-5" />
-                        {getTotalItems() > 0 && (
-                            <Badge className="absolute -top-1 -right-1 md:-top-2 md:-right-2 flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full p-0">
-                                {getTotalItems()}
-                            </Badge>
-                        )}
-                    </Button>
-                </DialogTrigger>
-                <DialogContent className="max-h-[80vh] max-w-sm md:mx-w-lg overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Keranjang</DialogTitle>
-                        <DialogDescription>Review keranjang Anda sebelum melakukan reservasi</DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                        {cart.length === 0 ? (
-                            <div className="py-8 text-center">
-                                <ClipboardList className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                                <p className="text-muted-foreground">Keranjang Anda kosong</p>
-                            </div>
-                        ) : (
-                            <>
-                                {cart.map((item) => (
-                                    <div key={item.product.id} className="flex items-center space-x-4 rounded-lg border p-4">
-                                        <div className="h-16 w-16 flex-shrink-0">
-                                            {getPrimaryPhoto(item.product.photos) ? (
-                                                <img
-                                                    src={getPrimaryPhoto(item.product.photos)!}
-                                                    alt={item.product.name}
-                                                    className="h-full w-full rounded object-cover"
-                                                />
-                                            ) : (
-                                                <div className="flex h-full w-full items-center justify-center rounded bg-muted">
-                                                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex-grow">
-                                            <h4 className="font-medium">{item.product.name}</h4>
-                                            <p className="text-sm text-muted-foreground">{formatCurrency(item.product.price)}</p>
-                                        </div>
-
-                                        <div className="flex items-center space-x-2">
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="h-8 w-8"
-                                                onClick={() => updateCartItemQuantity(item.product.id, item.quantity - 1)}
-                                            >
-                                                <Minus className="h-4 w-4" />
-                                            </Button>
-
-                                            <span className="w-8 text-center">{item.quantity}</span>
-
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                className="h-8 w-8"
-                                                onClick={() => updateCartItemQuantity(item.product.id, item.quantity + 1)}
-                                            >
-                                                <Plus className="h-4 w-4" />
-                                            </Button>
-
-                                            <Button
-                                                variant="destructive"
-                                                size="icon"
-                                                className="h-8 w-8"
-                                                onClick={() => removeFromCart(item.product.id)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                <div className="border-t pt-4">
-                                    <div className="flex items-center justify-between text-lg font-semibold">
-                                        <span>Total:</span>
-                                        <span>{formatCurrency(getTotalPrice())}</span>
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    <DialogFooter className="flex-col space-y-2">
-                        {cart.length > 0 && (
-                            <>
-                                <Button variant="outline" className="w-full" onClick={clearCart}>
-                                    Kosongkan Keranjang
-                                </Button>
-                                <Button className="w-full" onClick={goToCheckout}>
-                                    Lanjut ke Reservasi ({getTotalItems()} item)
-                                </Button>
-                            </>
-                        )}
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </header>
-
-        {/* Hero */}
-        <div scrollToSection={scrollToSection} />
             <section id="hero" className="relative min-h-screen md:min-h-[1100px] lg:min-h-screen overflow-hidden bg-[#FFFFFF]">
                 <div
                     className="absolute top-0 left-0 w-full min-h-screen md:min-h-[1100px] lg:min-h-screen bg-cover bg-center"
                     style={{
-                    backgroundImage: "url('/images/bg-hero2.svg')",
-                    transform: `translateY(${offsetY * 0.2}px)`,
+                        backgroundImage: "url('/images/bg-hero2.svg')",
+                        transform: `translateY(${offsetY * 0.2}px)`,
                     }}
-                >
-                </div>
+                />
                 <div className="h-screen flex justify-center items-center w-full relative">
                     <div className="font-raleway flex flex-col items-center justify-center text-white">
-                    <div className="bg-[#333333] px-4 py-2 rounded-[48px] mb-4">
-                        <p className="font-bold">CAFFESEEK</p>
-                    </div>
-                    <h1 className="text-[28px] md:text-[54px] lg:text-[60px] mb-6 font-audiowide font-bold text-center leading-none">
-                        Temukan dan Pilih <br/> Caffe & Resto Favorit Anda
-                    </h1>
-                    <p className="px-6 md:px-0 font-semibold text-center text-[#BDEE63] text-lg md:text-xl mb-8 flex items-center justify-center gap-2">
-                        <MapPin className="h-5"/>
-                        Semarang, Indonesia.
-                    </p>
-                    <div className="flex gap-4 font-bold">
-                        <a
-                        onClick={() => scrollToSection("produk")}
-                        className="cursor-pointer rounded-3xl text-white bg-[#333333] px-6 py-3 hover:ring-2 ring-inset ring-white transition duration-300 ease-in-out"
-                        >
-                        Explore
-                        </a>
-                        <a
-                        href="/login"
-                        className="rounded-3xl text-black bg-white px-6 py-3 hover:bg-[#BDEE63] transition duration-300 ease-in-out"
-                        >
-                        Join Now!
-                        </a>
-                    </div>
+                        <div className="bg-[#333333] px-4 py-2 rounded-[48px] mb-4">
+                            <p className="font-bold">CAFFESEEK</p>
+                        </div>
+                        <h1 className="text-[28px] md:text-[54px] lg:text-[60px] mb-6 font-audiowide font-bold text-center leading-none">
+                            Temukan dan Pilih <br /> Café & Resto Favorit Anda
+                        </h1>
+                        <p className="px-6 md:px-0 font-semibold text-center text-[#BDEE63] text-lg md:text-xl mb-8 flex items-center justify-center gap-2">
+                            <MapPin className="h-5" />
+                            Semarang, Indonesia.
+                        </p>
+                        <div className="flex gap-4 font-bold">
+                            <button
+                                onClick={() => scrollToSection("daftar-cafe")}
+                                className="rounded-3xl text-white bg-[#333333] px-6 py-3 hover:ring-2 ring-inset ring-white transition duration-300 ease-in-out"
+                            >
+                                Explore
+                            </button>
+                            <a
+                                href="/login"
+                                className="rounded-3xl text-black bg-white px-6 py-3 hover:bg-[#BDEE63] transition duration-300 ease-in-out"
+                            >
+                                Join Now!
+                            </a>
+                        </div>
                     </div>
                 </div>
                 <div
-                    className="absolute w-55 md:w-90 lg:w-100 bottom-[-0px] left-[10px] md:bottom-[-5px] md:left-[10px] lg:top-[250px] lg:left-2 z-30 opacity-25"
-                    style={{
-                    transform: `translateY(${offsetY * 0.3}px)`,
-                    }}
+                    className="absolute w-55 md:w-90 lg:w-100 bottom-0 left-[10px] md:left-[10px] lg:top-[250px] lg:left-2 z-30 opacity-25"
+                    style={{ transform: `translateY(${offsetY * 0.3}px)` }}
                 >
                     <img src="/images/icon-store.svg" alt="" />
                 </div>
-
                 <div
-                    className="absolute w-[50%] md:w-[70%] lg:w-fit bottom-[-0px] right-[-0px] md:bottom-[-0px] md:right-[-240px] lg:bottom-[-25px] lg:right-0 z-30"
-                    style={{
-                    transform: `translateY(${offsetY * 0.3}px)`,
-                    }}
+                    className="absolute w-[50%] md:w-[70%] lg:w-fit bottom-0 right-0 md:right-[-240px] lg:bottom-[-25px] lg:right-0 z-30"
+                    style={{ transform: `translateY(${offsetY * 0.3}px)` }}
                 >
                     <img src="/images/biji-kopi-kecil.svg" alt="" />
                 </div>
                 <div
                     className="absolute bottom-0 left-0 w-full h-[80px] md:h-[120px] lg:h-[162.25px] bg-white z-20"
-                    style={{
-                    clipPath: "polygon(50% 100%, 100% 0, 100% 100%, 0 100%, 0 0)",
-                    }}>
+                    style={{ clipPath: "polygon(50% 100%, 100% 0, 100% 100%, 0 100%, 0 0)" }}
+                />
+            </section>
+
+            <section id="daftar-cafe" className="relative z-10 bg-[#F7F8F2] py-16 md:py-24">
+                <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 md:px-6 lg:px-0">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <p className="text-sm font-semibold uppercase tracking-[0.4em] text-[#9AA05B]">Daftar Café & Resto</p>
+                            <h2 className="text-3xl font-extrabold text-[#1F1F1F] md:text-4xl">Eksplorasi Kurasi Pilihan Kami</h2>
+                        </div>
+                        <button
+                            onClick={handleRefresh}
+                            className="inline-flex items-center gap-2 self-start rounded-full border border-[#BDEE63] bg-white px-5 py-2 text-sm font-semibold text-[#3B3B3B] transition hover:bg-[#BDEE63]/20 disabled:opacity-60"
+                            disabled={isRefreshing}
+                        >
+                            {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw size={16} />}
+                            Muat Ulang
+                        </button>
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {isRefreshing && cafes.length === 0
+                            ? [...Array(3)].map((_, idx) => <CafeSkeletonCard key={`skeleton-${idx}`} />)
+                            : cafes.map((cafe) => {
+                                  const photo = cafe.photos.find((p) => p.is_primary) ?? cafe.photos[0];
+                                  const isActive = selectedCafe?.id === cafe.id;
+                                  return (
+                                      <article
+                                          key={cafe.id}
+                                          className={`group flex flex-col overflow-hidden rounded-[32px] border bg-white shadow-[0_20px_45px_rgba(23,23,23,0.08)] transition hover:-translate-y-2 ${
+                                              isActive ? "border-[#BDEE63]" : "border-white/40"
+                                          }`}
+                                      >
+                                          <div className="relative aspect-video w-full overflow-hidden bg-[#F5F5F5]">
+                                              <img
+                                                  src={photo?.url || PLACEHOLDER_IMAGE}
+                                                  alt={cafe.name}
+                                                  className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                                              />
+                                              <div className="absolute left-4 top-4 rounded-full bg-white/80 px-4 py-1 text-xs font-semibold text-[#3B3B3B]">
+                                                  {cafe.kategori}
+                                              </div>
+                                          </div>
+                                          <div className="flex flex-1 flex-col gap-4 p-6">
+                                              <div>
+                                                  <h3 className="text-xl font-bold text-[#131313]">{cafe.name}</h3>
+                                                  <p className="mt-1 flex items-center gap-1.5 text-sm text-[#5E5E5E]">
+                                                      <MapPin className="h-4 w-4 text-[#BDEE63]" />
+                                                      {cafe.location}
+                                                  </p>
+                                              </div>
+                                              <button
+                                                  onClick={() => handleSelectCafe(cafe)}
+                                                  className="mt-auto inline-flex items-center justify-center rounded-full bg-[#333333] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#BDEE63] hover:text-[#1F1F1F]"
+                                              >
+                                                  Lihat Detail
+                                              </button>
+                                          </div>
+                                      </article>
+                                  );
+                              })}
+                        {!cafes.length && !isRefreshing && (
+                            <p className="col-span-full rounded-3xl border border-dashed border-gray-300 bg-white/40 py-10 text-center text-sm text-gray-500">
+                                Belum ada café terdaftar.
+                            </p>
+                        )}
+                    </div>
                 </div>
             </section>
 
-            {/* Main Content */}
-            <main className="container mx-auto px-4 py-6">
-                {/* Filters */}
-                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                        <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Semua Kategori" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Semua Kategori</SelectItem>
-                            {categories.map((category) => (
-                                <SelectItem key={category.id} value={category.id.toString()}>
-                                    {category.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+            <section id="detail-cafe" className="bg-white py-16 md:py-24">
+                <div className="mx-auto max-w-6xl px-4 md:px-6 lg:px-0">
+                    <div className="mb-8">
+                        <p className="text-sm font-semibold uppercase tracking-[0.4em] text-[#9AA05B]">Detail Café</p>
+                        <h2 className="text-3xl font-extrabold text-[#1F1F1F] md:text-4xl">Informasi Lengkap Untuk Reservasi</h2>
+                    </div>
 
-                {/* Products Grid */}
-                <div className="grid gap-2 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                    {filteredProducts.map((product) => {
-                        const quantityInCart = getProductQuantityInCart(product.id);
-
-                        return (
-                            <Card key={product.id} className="overflow-hidden transition-shadow hover:shadow-lg">
-                                <div className="relative aspect-square bg-muted">
-                                    {product.photos && product.photos.length > 0 ? (
-                                        product.photos.length === 1 ? (
-                                            // Single image - no carousel needed
-                                            <img src={product.photos[0].url} alt={product.name} className="h-full w-full object-cover" />
-                                        ) : (
-                                            // Multiple images - use carousel
-                                            <Carousel className="aspect-square w-full">
-                                                <CarouselContent className="aspect-square">
-                                                    {product.photos.map((photo, index) => (
-                                                        <CarouselItem key={photo.id} className="aspect-square">
-                                                            <img
-                                                                src={photo.url}
-                                                                alt={`${product.name} - Photo ${index + 1}`}
-                                                                className="h-full w-full object-cover"
-                                                            />
-                                                        </CarouselItem>
-                                                    ))}
-                                                </CarouselContent>
-                                                <CarouselPrevious />
-                                                <CarouselNext />
-                                                <CarouselIndicators />
-                                            </Carousel>
-                                        )
+                    {selectedCafe ? (
+                        <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+                            <div className="space-y-6">
+                                <div className="relative overflow-hidden rounded-[32px] bg-[#F5F5F5]">
+                                    <img
+                                        src={primaryPhoto?.url || PLACEHOLDER_IMAGE}
+                                        alt={selectedCafe.name}
+                                        className="h-full max-h-[460px] w-full object-cover"
+                                    />
+                                    {selectedCafe.video_url && (
+                                        <a
+                                            href={selectedCafe.video_url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="absolute inset-0 flex items-center justify-center bg-black/30 text-white transition hover:bg-black/50"
+                                        >
+                                            <PlayCircle className="h-16 w-16 drop-shadow-lg" />
+                                        </a>
+                                    )}
+                                </div>
+                                {galleryPhotos.length > 1 && (
+                                    <div>
+                                        <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#9AA05B]">Galeri</p>
+                                        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                                            {galleryPhotos.slice(0, 4).map((photo) => (
+                                                <div key={photo.id} className="overflow-hidden rounded-2xl border border-white/60 bg-[#F2F2F2]">
+                                                    <img src={photo.url} alt={`${selectedCafe.name} photo`} className="h-24 w-full object-cover" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                <div>
+                                    <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#9AA05B]">Video Tur</p>
+                                    {selectedCafe.video_url ? (
+                                        <video controls src={selectedCafe.video_url} className="w-full rounded-[32px] border border-white/50 shadow-lg">
+                                            Browser anda tidak mendukung pemutar video.
+                                        </video>
                                     ) : (
-                                        <div className="flex h-full items-center justify-center">
-                                            <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                                        <div className="flex items-center justify-center rounded-[32px] border border-dashed border-gray-300 bg-gray-50 py-16 text-gray-500">
+                                            Video belum tersedia.
                                         </div>
                                     )}
                                 </div>
-
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-lg">{product.name}</CardTitle>
-                                    <div className="flex items-center justify-between">
-                                        <Badge variant="secondary">{product.category?.name}</Badge>
-                                        <span className="text-lg font-semibold text-green-600">{formatCurrency(product.price)}</span>
-                                    </div>
-                                </CardHeader>
-
-                                <CardContent className="pt-0">
-                                    {quantityInCart > 0 ? (
-                                        <div className="flex items-center justify-between gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                onClick={() => updateCartItemQuantity(product.id, quantityInCart - 1)}
-                                            >
-                                                <Minus className="h-4 w-4" />
-                                            </Button>
-
-                                            <span className="flex-grow text-center font-medium">{quantityInCart} di keranjang</span>
-
-                                            <Button
-                                                variant="outline"
-                                                size="icon"
-                                                onClick={() => updateCartItemQuantity(product.id, quantityInCart + 1)}
-                                            >
-                                                <Plus className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <Button className="w-full" onClick={() => addToCart(product)}>
-                                            <Plus className="mr-2 h-4 w-4" />
-                                            Tambah ke Keranjang
-                                        </Button>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
-                </div>
-
-                {/* Infinite Scroll Observer */}
-                {hasMorePages && (
-                    <div ref={observerRef} className="flex justify-center py-8">
-                        {isLoadingMore ? (
-                            <div className="flex items-center gap-2">
-                                <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary"></div>
-                                <span className="text-muted-foreground">Memuat Caffe & Resto lainnya...</span>
                             </div>
-                        ) : (
-                            <div className="text-muted-foreground">Scroll ke bawah untuk memuat lebih banyak Caffe & Resto</div>
-                        )}
-                    </div>
-                )}
 
-                {/* End of results indicator */}
-                {!hasMorePages && filteredProducts.length > 0 && (
-                    <div className="flex justify-center py-8">
-                        <div className="text-center text-muted-foreground">
-                            <div className="mx-auto mb-4 h-px w-24 bg-border"></div>
-                            <p>Anda telah melihat semua Caffe & Resto</p>
-                            <p className="mt-1 text-sm">Menampilkan {filteredProducts.length} Caffe & Resto</p>
+                            <div className="space-y-6 rounded-[32px] bg-[#FDFDFD] p-6 shadow-[0_20px_45px_rgba(23,23,23,0.08)]">
+                                <div>
+                                    <p className="text-sm font-semibold uppercase tracking-[0.4em] text-[#9AA05B]">{selectedCafe.kategori}</p>
+                                    <h3 className="text-3xl font-extrabold text-[#1F1F1F]">{selectedCafe.name}</h3>
+                                    <p className="mt-2 flex items-center gap-2 text-[#5E5E5E]">
+                                        <MapPin className="h-4 w-4 text-[#BDEE63]" />
+                                        {selectedCafe.location}
+                                    </p>
+                                </div>
+
+                                <p className="text-[#4A4A4A]">{selectedCafe.description}</p>
+
+                                <div>
+                                    <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#9AA05B]">Jam Operasional</p>
+                                    <div className="grid grid-cols-1 gap-3 rounded-3xl bg-[#F7F8F2] p-4 text-sm text-[#3C3C3C]">
+                                        {operationalEntries.length ? (
+                                            operationalEntries.map(([day, time]) => (
+                                                <div key={day} className="flex items-center justify-between rounded-2xl bg-white px-4 py-2">
+                                                    <span className="capitalize text-[#6D6D6D]">{day}</span>
+                                                    <span className="font-semibold">{time}</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-center text-gray-500">Belum ada jadwal.</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#9AA05B]">Fasilitas</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {(Object.keys(facilityConfig) as FacilityKey[]).map((key) => {
+                                            const config = facilityConfig[key];
+                                            const isAvailable =
+                                                key === "meeting_room"
+                                                    ? selectedCafe.facilities.meeting_room.available
+                                                    : selectedCafe.facilities[key];
+
+                                            return (
+                                                <div
+                                                    key={key}
+                                                    className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                                                        isAvailable ? "border-[#BDEE63] bg-[#F9FFE8] text-[#1F1F1F]" : "border-gray-200 text-gray-400"
+                                                    }`}
+                                                >
+                                                    <config.icon className="h-5 w-5" />
+                                                    <div className="flex flex-col">
+                                                        <span>{config.label}</span>
+                                                        {config.getTrailingText && isAvailable ? (
+                                                            <span className="text-xs font-medium text-[#7A7A7A]">
+                                                                {config.getTrailingText(selectedCafe.facilities)}
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#9AA05B]">Menu & Harga</p>
+                                    <div className="space-y-3">
+                                        {selectedCafe.menus.length ? (
+                                            selectedCafe.menus.map((menu) => (
+                                                <div key={menu.id} className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3">
+                                                    <div>
+                                                        <p className="font-semibold text-[#1F1F1F]">{menu.name}</p>
+                                                        <p className="text-xs uppercase tracking-widest text-[#9AA05B]">{menu.category}</p>
+                                                    </div>
+                                                    <p className="text-lg font-bold text-[#1F1F1F]">
+                                                        {currencyFormatter.format(menu.price)}
+                                                    </p>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="rounded-2xl border border-dashed border-gray-300 px-4 py-6 text-center text-gray-500">
+                                                Menu belum tersedia.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={handleReservationClick}
+                                    className="w-full rounded-full bg-[#BDEE63] px-6 py-4 text-center text-base font-bold text-[#1F1F1F] transition hover:bg-[#A3D347]"
+                                >
+                                    Reservasi Sekarang
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                )}
-
-                {/* Empty state */}
-                {filteredProducts.length === 0 && !isLoadingMore && (
-                    <div className="py-12 text-center">
-                        <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-2 text-sm font-medium text-foreground">Tidak ada Caffe & Resto ditemukan</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            {searchTerm || (categoryFilter && categoryFilter !== 'all')
-                                ? 'Coba sesuaikan kriteria pencarian Anda'
-                                : 'Belum ada Caffe & Resto yang tersedia'}
-                        </p>
-                    </div>
-                )}
-            </main>
+                    ) : (
+                        <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 px-6 py-12 text-center text-gray-500">
+                            Pilih café dari daftar untuk melihat detailnya.
+                        </div>
+                    )}
+                </div>
+            </section>
         </div>
     );
 }

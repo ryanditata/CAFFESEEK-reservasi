@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('product_photos', function (Blueprint $table) {
+        Schema::create('cafe_menus', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained('products', 'id', 'product_photo_product_id')->onDelete('cascade');
-            $table->string('url');
-            $table->boolean('is_primary')->default(false);
+            $table->foreignId('cafe_id')->constrained('cafes')->cascadeOnDelete();
+            $table->string('name');
+            $table->string('category');
+            $table->decimal('price', 10, 2);
+            $table->string('photo_url')->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +27,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_photos');
+        Schema::dropIfExists('cafe_menus');
     }
 };
+

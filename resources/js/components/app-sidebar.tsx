@@ -3,7 +3,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, ChartBarStacked, Folder, LayoutGrid, Utensils, ClipboardList } from 'lucide-react';
+import { BookOpen, Folder, LayoutGrid, Store} from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -13,19 +13,9 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'Reservasi',
-        href: '/admin/orders',
-        icon: ClipboardList,
-    },
-    {
         title: 'Caffe & Resto',
-        href: '/admin/products',
-        icon: Utensils,
-    },
-    {
-        title: 'Categories',
-        href: '/admin/categories',
-        icon: ChartBarStacked,
+        href: '/admin/cafes',
+        icon: Store,
     },
 ];
 
