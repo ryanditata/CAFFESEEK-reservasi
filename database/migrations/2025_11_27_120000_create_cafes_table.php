@@ -16,8 +16,6 @@ return new class extends Migration
             $table->string('name');
             $table->text('description');
             $table->string('location');
-            $table->decimal('latitude', 10, 7)->nullable();
-            $table->decimal('longitude', 10, 7)->nullable();
             $table->string('video_url')->nullable();
             $table->json('operational_hours')->nullable();
             $table->boolean('has_colokan')->default(false);

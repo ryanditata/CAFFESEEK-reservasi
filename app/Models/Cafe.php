@@ -15,8 +15,6 @@ class Cafe extends Model
     protected $guarded = ['id', 'created_at', 'updated_at'];
 
     protected $casts = [
-        'latitude' => 'float',
-        'longitude' => 'float',
         'operational_hours' => 'array',
         'has_colokan' => 'boolean',
         'has_wifi' => 'boolean',

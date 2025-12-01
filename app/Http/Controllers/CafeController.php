@@ -125,8 +125,6 @@ class CafeController extends Controller
             'kategori' => 'required|string|max:255',
             'description' => 'required|string',
             'location' => 'required|string|max:255',
-            'latitude' => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
             'operational_hours' => 'required|array',
             'operational_hours.monday' => 'required|string|max:255',
             'operational_hours.tuesday' => 'required|string|max:255',
@@ -165,8 +163,6 @@ class CafeController extends Controller
             'kategori' => $request->input('kategori'),
             'description' => $request->input('description'),
             'location' => $request->input('location'),
-            'latitude' => $request->filled('latitude') ? $request->input('latitude') : null,
-            'longitude' => $request->filled('longitude') ? $request->input('longitude') : null,
             'operational_hours' => $request->input('operational_hours', []),
             'has_colokan' => $request->boolean('has_colokan'),
             'has_wifi' => $request->boolean('has_wifi'),
@@ -300,8 +296,6 @@ class CafeController extends Controller
             'kategori' => $cafe->kategori,
             'description' => $cafe->description,
             'location' => $cafe->location,
-            'latitude' => $cafe->latitude,
-            'longitude' => $cafe->longitude,
             'video_url' => $cafe->video_url,
             'operational_hours' => $cafe->operational_hours,
             'facilities' => [
@@ -340,4 +334,3 @@ class CafeController extends Controller
         ];
     }
 }
-

@@ -6,16 +6,13 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', [CustomerController::class, 'index'])->name('home');
-
-// !important: This route will be using middleware 'auth' and 'verified' in the admin prefix group
-Route::POST('/print', [PrintController::class, 'index'])->name('print.index');
+Route::get('/cafes/{id}', [CustomerController::class, 'show'])->name('customer.cafes.show');
 
 Route::prefix('admin')->middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('admin/dashboard/index');
     })->name('admin.dashboard');
 
-    // Caffe & Resto advanced directory
     Route::resource('cafes', CafeController::class);
 });
 require __DIR__ . '/settings.php';

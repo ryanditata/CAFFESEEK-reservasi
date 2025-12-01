@@ -57,8 +57,6 @@ interface Cafe {
     kategori: string;
     description: string;
     location: string;
-    latitude: number | null;
-    longitude: number | null;
     video_url?: string | null;
     operational_hours: OperationalHours;
     facilities: Facilities;
@@ -86,8 +84,6 @@ interface CafeFormState {
     kategori: string;
     description: string;
     location: string;
-    latitude: string;
-    longitude: string;
     has_colokan: boolean;
     has_wifi: boolean;
     has_indoor: boolean;
@@ -163,8 +159,6 @@ const initialFormState: CafeFormState = {
     kategori: '',
     description: '',
     location: '',
-    latitude: '',
-    longitude: '',
     has_colokan: false,
     has_wifi: false,
     has_indoor: false,
@@ -217,7 +211,6 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
         }, 400);
 
         return () => clearTimeout(debounce);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchTerm, selectedFacilities]);
 
     const fetchCafes = (page: number) => {
@@ -266,8 +259,6 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                 kategori: cafe.kategori,
                 description: cafe.description,
                 location: cafe.location,
-                latitude: cafe.latitude?.toString() || '',
-                longitude: cafe.longitude?.toString() || '',
                 has_colokan: cafe.facilities.colokan,
                 has_wifi: cafe.facilities.wifi,
                 has_indoor: cafe.facilities.indoor,
@@ -450,15 +441,6 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
         payload.append('kategori', formState.kategori);
         payload.append('description', formState.description);
         payload.append('location', formState.location);
-
-        if (formState.latitude) {
-            payload.append('latitude', formState.latitude);
-        }
-
-        if (formState.longitude) {
-            payload.append('longitude', formState.longitude);
-        }
-
         Object.entries(formState.operational_hours).forEach(([day, value]) => {
             payload.append(`operational_hours[${day}]`, value);
         });
@@ -596,21 +578,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
             <TableCell>
                 <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <div>
                         <p className="font-medium">{cafe.location}</p>
-                        {cafe.latitude && cafe.longitude && (
-                            <p className="text-xs text-muted-foreground">
-                                {cafe.latitude.toFixed(4)}, {cafe.longitude.toFixed(4)}
-                            </p>
-                        )}
-                    </div>
-                </div>
-            </TableCell>
-            <TableCell>{renderFacilities(cafe.facilities)}</TableCell>
-            <TableCell>
-                <div className="flex flex-col text-sm text-muted-foreground">
-                    <span>Mon-Fri: {cafe.operational_hours.monday}</span>
-                    <span>Sat-Sun: {cafe.operational_hours.saturday}</span>
                 </div>
             </TableCell>
             <TableCell className="text-end">
@@ -811,29 +779,6 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                     placeholder="Caffe 24 Jam di Semarang Tengah"
                 />
                 {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                    <Label>Latitude</Label>
-                    <Input
-                        type="number"
-                        step="0.000001"
-                        value={formState.latitude}
-                        onChange={(e) => setFormState({ ...formState, latitude: e.target.value })}
-                    />
-                    {errors.latitude && <p className="text-sm text-red-600">{errors.latitude}</p>}
-                </div>
-                <div className="space-y-2">
-                    <Label>Longitude</Label>
-                    <Input
-                        type="number"
-                        step="0.000001"
-                        value={formState.longitude}
-                        onChange={(e) => setFormState({ ...formState, longitude: e.target.value })}
-                    />
-                    {errors.longitude && <p className="text-sm text-red-600">{errors.longitude}</p>}
-                </div>
             </div>
 
             <Separator />
@@ -1044,9 +989,6 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => fetchCafes(pagination.current_page)}>
-                            Refresh
-                        </Button>
                         <Button onClick={openCreateModal}>
                             <PlusIcon/>
                             Add Caffe & Resto
@@ -1096,8 +1038,6 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                                     <TableHead>Caffe & Resto</TableHead>
                                     <TableHead>Kategori</TableHead>
                                     <TableHead>Lokasi</TableHead>
-                                    <TableHead>Fasilitas</TableHead>
-                                    <TableHead>Jam Operasional</TableHead>
                                     <TableHead className="text-end">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
