@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cafe;
 use App\Models\CafeMenu;
 use App\Models\CafePhoto;
+use App\Models\CafeTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -14,7 +15,7 @@ class CafeController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Cafe::with(['photos', 'menus']);
+        $query = Cafe::with(['photos', 'menus', 'tables']); 
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -68,9 +69,11 @@ class CafeController extends Controller
         DB::transaction(function () use ($request, $validated) {
             $cafe = Cafe::create($this->buildCafePayload($request));
 
+            $this->handleMapsEmbedUpdate($request, $cafe);
             $this->handleVideoUpload($request, $cafe);
             $this->handlePhotoUploads($request, $cafe);
             $this->syncMenus($request, $cafe);
+            $this->syncTables($request, $cafe);
         });
 
         return redirect()->route('cafes.index')->with('success', 'Caffe & Resto created successfully.');
@@ -79,7 +82,7 @@ class CafeController extends Controller
     public function show(Cafe $cafe)
     {
         if (request()->wantsJson()) {
-            $cafe->load(['photos', 'menus']);
+            $cafe->load(['photos', 'menus', 'tables']); 
 
             return response()->json([
                 'cafe' => self::transformCafe($cafe),
@@ -96,6 +99,8 @@ class CafeController extends Controller
         DB::transaction(function () use ($request, $cafe) {
             $cafe->update($this->buildCafePayload($request));
 
+            $this->handleMapsEmbedUpdate($request, $cafe);
+
             if ($request->hasFile('video')) {
                 $this->deleteStoredFile($cafe->video_url);
                 $this->handleVideoUpload($request, $cafe);
@@ -106,6 +111,9 @@ class CafeController extends Controller
 
             $this->syncMenus($request, $cafe);
             $this->removeMarkedMenus($request, $cafe);
+            
+            $this->syncTables($request, $cafe);
+            $this->removeMarkedTables($request, $cafe);
         });
 
         return redirect()->route('cafes.index')->with('success', 'Caffe & Resto updated successfully.');
@@ -125,6 +133,7 @@ class CafeController extends Controller
             'kategori' => 'required|string|max:255',
             'description' => 'required|string',
             'location' => 'required|string|max:255',
+            'maps_embed_url' => 'nullable|string',
             'operational_hours' => 'required|array',
             'operational_hours.monday' => 'required|string|max:255',
             'operational_hours.tuesday' => 'required|string|max:255',
@@ -137,6 +146,14 @@ class CafeController extends Controller
             'video' => 'nullable|file|mimetypes:video/mp4,video/quicktime,video/x-msvideo|max:51200',
             'photos' => 'nullable|array',
             'photos.*' => 'image|max:5120',
+            
+            'tables' => 'nullable|array',
+            'tables.*.id' => 'nullable|exists:cafe_tables,id',
+            'tables.*.table_number' => 'required|integer|min:1|max:999',
+            'tables.*.capacity' => 'required|integer|min:1',
+            'removed_table_ids' => 'nullable|array',
+            'removed_table_ids.*' => 'exists:cafe_tables,id',
+            
             'menus' => 'nullable|array',
             'menus.*.id' => 'nullable|exists:cafe_menus,id',
             'menus.*.name' => 'required|string|max:255',
@@ -163,15 +180,25 @@ class CafeController extends Controller
             'kategori' => $request->input('kategori'),
             'description' => $request->input('description'),
             'location' => $request->input('location'),
-            'operational_hours' => $request->input('operational_hours', []),
+        
+            'operational_hours' => $request->input('operational_hours', []), 
+  
             'has_colokan' => $request->boolean('has_colokan'),
             'has_wifi' => $request->boolean('has_wifi'),
             'has_indoor' => $request->boolean('has_indoor'),
             'has_outdoor' => $request->boolean('has_outdoor'),
             'has_smoking_area' => $request->boolean('has_smoking_area'),
             'meeting_room_available' => $request->boolean('meeting_room_available'),
+            
             'meeting_room_capacity' => $request->filled('meeting_room_capacity') ? $request->input('meeting_room_capacity') : null,
         ];
+    }
+
+    private function handleMapsEmbedUpdate(Request $request, Cafe $cafe): void
+    {
+        $cafe->update([
+            'maps_embed_url' => $request->input('maps_embed_url') ?? null,
+        ]);
     }
 
     private function handleVideoUpload(Request $request, Cafe $cafe): void
@@ -273,6 +300,45 @@ class CafeController extends Controller
             $menu->delete();
         }
     }
+    
+    private function syncTables(Request $request, Cafe $cafe): void
+    {
+        $tables = $request->input('tables', []);
+
+        foreach ($tables as $tableData) {
+            $table = null;
+            
+            if (!empty($tableData['id'])) {
+                $table = CafeTable::where('cafe_id', $cafe->id)
+                    ->where('id', $tableData['id'])
+                    ->first();
+            }
+
+            if (!$table) {
+                $table = new CafeTable(['cafe_id' => $cafe->id]);
+            }
+            
+            $table->table_number = $tableData['table_number'] ?? 0;
+            $table->capacity = $tableData['capacity'] ?? 0;
+            
+            $table->save();
+        }
+    }
+
+    private function removeMarkedTables(Request $request, Cafe $cafe): void
+    {
+        $tableIds = $request->input('removed_table_ids', []);
+
+        if (empty($tableIds)) {
+            return;
+        }
+
+        $tables = CafeTable::whereIn('id', $tableIds)->where('cafe_id', $cafe->id)->get();
+
+        foreach ($tables as $table) {
+            $table->delete();
+        }
+    }
 
     private function deleteStoredFile(?string $publicUrl): void
     {
@@ -296,6 +362,7 @@ class CafeController extends Controller
             'kategori' => $cafe->kategori,
             'description' => $cafe->description,
             'location' => $cafe->location,
+            'maps_embed_url' => $cafe->maps_embed_url ?? null,
             'video_url' => $cafe->video_url,
             'operational_hours' => $cafe->operational_hours,
             'facilities' => [
@@ -320,6 +387,11 @@ class CafeController extends Controller
                 'category' => $menu->category,
                 'price' => $menu->price,
                 'photo_url' => $menu->photo_url,
+            ])->values()->all(),
+            'tables' => $cafe->tables->map(fn ($table) => [
+                'id' => $table->id,
+                'table_number' => $table->table_number,
+                'capacity' => $table->capacity,
             ])->values()->all(),
         ];
     }

@@ -1,4 +1,4 @@
-import { Cigarette, DoorClosed, MapPin, PlayCircle, Plug, SunMedium, Users, Wifi } from "lucide-react";
+import { Cigarette, DoorClosed, MapPin, PlayCircle, Plug, SunMedium, Users, Wifi, Sofa } from "lucide-react";
 import { LucideIcon, ArrowLeft, ImageIcon } from "lucide-react";
 import { useMemo, useEffect, useState } from "react";
 import Lenis from "@studio-freight/lenis";
@@ -16,6 +16,12 @@ interface CafeMenu {
     category: string;
     price: number;
     photo_url?: string | null;
+}
+
+interface CafeTable {
+    id: number;
+    table_number: number;
+    capacity: number;
 }
 
 interface MeetingRoomFacility {
@@ -40,11 +46,13 @@ export interface CafeDetail {
     kategori: string;
     description: string;
     location: string;
+    maps_embed_url: string | null;
     video_url?: string | null;
     operational_hours: OperationalHours;
     facilities: Facilities;
     photos: CafePhoto[];
     menus: CafeMenu[];
+    tables: CafeTable[];
 }
 
 type FacilityKey = "colokan" | "wifi" | "indoor" | "outdoor" | "smoking_area" | "meeting_room";
@@ -125,7 +133,7 @@ export default function DetailCafes({ cafe }: { cafe: CafeDetail }) {
                 <div className="max-w-6xl mx-auto flex items-center gap-4 px-4 md:px-6 lg:px-0 py-6 md:py-8">
                     <button
                         onClick={() => router.get("/")}
-                        className="flex items-center gap-2 text-black hover:text-gray-600 transition"
+                        className="flex items-center gap-2 text-black hover:text-gray-600 transition cursor-pointer"
                     >
                         <ArrowLeft className="h-6 w-6" />
                     </button>
@@ -178,6 +186,17 @@ export default function DetailCafes({ cafe }: { cafe: CafeDetail }) {
                                     </div>
                                 )}
                             </div>
+                            {selectedCafe.maps_embed_url && (
+                                <div className="space-y-2">
+                                    <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#9AA05B]">Maps</p>
+                                    <div className="w-full aspect-video rounded-[32px] overflow-hidden border">
+                                        <div 
+                                            className="w-sm"
+                                            dangerouslySetInnerHTML={{ __html: selectedCafe.maps_embed_url }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="space-y-6 rounded-[32px] bg-[#FDFDFD] p-6 shadow-[0_20px_45px_rgba(23,23,23,0.08)]">
@@ -240,32 +259,55 @@ export default function DetailCafes({ cafe }: { cafe: CafeDetail }) {
                                 </div>
                             </div>
 
+                            {selectedCafe.tables.length > 0 && (
+                                <div>
+                                    <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#9AA05B]">Daftar Meja</p>
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        {selectedCafe.tables.map((table) => (
+                                            <div key={table.id} className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3">
+                                                <Sofa className="h-10 w-10 text-[#BDEE63]" />
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold text-[#1F1F1F]">Meja {table.table_number}</span>
+                                                    <span className="text-sm text-[#7A7A7A]">{table.capacity} Pax</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <div>
                                 <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-[#9AA05B]">Menu & Harga</p>
                                 <div className="space-y-3">
                                     {selectedCafe.menus.length ? (
                                         selectedCafe.menus.map((menu) => (
                                             <div key={menu.id} className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3">
-                                                <div>
-                                                    {menu.photo_url ? (
-                                                        <img
-                                                            src={menu.photo_url}
-                                                            alt={menu.name}
-                                                            className="h-16 w-16 rounded object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="flex h-16 w-16 items-start justify-start rounded bg-muted">
-                                                            <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                                                        </div>
-                                                    )}
+                                                <div className="flex items-start gap-4 flex-shrink-0">
+                                                    <div className="flex-shrink-0">
+                                                        {menu.photo_url ? (
+                                                            <img
+                                                                src={menu.photo_url}
+                                                                alt={menu.name}
+                                                                className="h-16 w-16 rounded object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex h-16 w-16 items-center justify-center rounded bg-muted">
+                                                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    <div className="flex flex-col justify-center mt-2">
+                                                        <p className="font-semibold text-[#1F1F1F]">{menu.name}</p>
+                                                        <p className="text-xs uppercase tracking-widest text-[#9AA05B]">{menu.category}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="">
-                                                    <p className="font-semibold text-[#1F1F1F]">{menu.name}</p>
-                                                    <p className="text-xs uppercase tracking-widest text-[#9AA05B]">{menu.category}</p>
+                                                
+                                                <div className="text-end flex-shrink-0">
+                                                    <p className="text-lg font-bold text-[#1F1F1F]">
+                                                        {currencyFormatter.format(menu.price)}
+                                                    </p>
                                                 </div>
-                                                <p className="text-lg font-bold text-[#1F1F1F]">
-                                                    {currencyFormatter.format(menu.price)}
-                                                </p>
                                             </div>
                                         ))
                                     ) : (

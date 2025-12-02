@@ -12,7 +12,7 @@ import AppLayout from '@/layouts/app-layout';
 import { formatCurrency } from '@/lib/utils';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { Check, ImageIcon, MapPin, Plus, PlusIcon, SearchIcon, UploadIcon, XIcon } from 'lucide-react';
+import { Check, ImageIcon, MapPin, Plus, PlusIcon, SearchIcon, UploadIcon, XIcon, Sofa} from 'lucide-react';
 import { ChangeEvent, DragEvent, useEffect, useState } from 'react';
 
 interface CafePhoto {
@@ -41,6 +41,12 @@ interface Facilities {
     };
 }
 
+interface CafeTable {
+    id?: number;
+    table_number: number | '';
+    capacity: number | '';  
+}
+
 interface OperationalHours {
     monday: string;
     tuesday: string;
@@ -57,11 +63,13 @@ interface Cafe {
     kategori: string;
     description: string;
     location: string;
+    maps_embed_url: string | null;
     video_url?: string | null;
     operational_hours: OperationalHours;
     facilities: Facilities;
     photos: CafePhoto[];
     menus: CafeMenu[];
+    tables: CafeTable[];
 }
 
 interface CafeMenuForm {
@@ -84,6 +92,7 @@ interface CafeFormState {
     kategori: string;
     description: string;
     location: string;
+    maps_embed_url: string;
     has_colokan: boolean;
     has_wifi: boolean;
     has_indoor: boolean;
@@ -100,6 +109,8 @@ interface CafeFormState {
     videoFile: File | null;
     videoPreviewUrl: string | null;
     video_url: string | null;
+    ables: CafeTable[];
+    removedTableIds: number[];
 }
 
 interface Filters {
@@ -119,6 +130,8 @@ interface Props {
     filters: Filters;
     pagination: PaginationMeta;
 }
+
+const PLACEHOLDER_IMAGE = "https://placehold.co/80x80/DFDFDF/333?text=Img";
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/admin/dashboard' },
@@ -159,6 +172,7 @@ const initialFormState: CafeFormState = {
     kategori: '',
     description: '',
     location: '',
+    maps_embed_url: '',
     has_colokan: false,
     has_wifi: false,
     has_indoor: false,
@@ -172,6 +186,9 @@ const initialFormState: CafeFormState = {
     existingPhotos: [],
     removedPhotoIds: [],
     removedMenuIds: [],
+    tables: [],
+    removedMenuIds: [],
+    removedTableIds: [],
     videoFile: null,
     videoPreviewUrl: null,
     video_url: null,
@@ -259,6 +276,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                 kategori: cafe.kategori,
                 description: cafe.description,
                 location: cafe.location,
+                maps_embed_url: cafe.maps_embed_url || '',
                 has_colokan: cafe.facilities.colokan,
                 has_wifi: cafe.facilities.wifi,
                 has_indoor: cafe.facilities.indoor,
@@ -272,10 +290,16 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                     price: menu.price,
                     photoFile: null,
                 })),
+                tables: cafe.tables.map(table => ({
+                    id: table.id,
+                    table_number: table.table_number,
+                    capacity: table.capacity,
+                })),
                 existingPhotos: cafe.photos,
                 newPhotos: [],
                 removedPhotoIds: [],
                 removedMenuIds: [],
+                removedTableIds: [],
                 videoFile: null,
                 videoPreviewUrl: null,
                 video_url: cafe.video_url || null,
@@ -378,6 +402,45 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
         });
     };
 
+    const handleAddTable = () => {
+        setFormState((prev) => ({
+            ...prev,
+            tables: [
+                ...prev.tables,
+                {
+                    id: undefined,
+                    table_number: '',
+                    capacity: '',
+                },
+            ],
+        }));
+    };
+
+    const handleTableChange = (index: number, field: keyof CafeTable, value: string | number) => {
+        setFormState((prev) => {
+            const tables = [...prev.tables];
+            tables[index] = {
+                ...tables[index],
+                [field]: value,
+            };
+            return { ...prev, tables };
+        });
+    };
+
+    const handleRemoveTable = (index: number) => {
+        setFormState((prev) => {
+            const tables = [...prev.tables];
+            const [removed] = tables.splice(index, 1);
+            const removedTableIds = [...prev.removedTableIds];
+            
+            if (removed?.id) {
+                removedTableIds.push(removed.id);
+            }
+            
+            return { ...prev, tables, removedTableIds };
+        });
+    };
+
     const handlePhotoInput = (files: FileList | null) => {
         if (!files) return;
         const fileArray = Array.from(files).map((file) => ({
@@ -441,6 +504,8 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
         payload.append('kategori', formState.kategori);
         payload.append('description', formState.description);
         payload.append('location', formState.location);
+        payload.append('maps_embed_url', formState.maps_embed_url);
+
         Object.entries(formState.operational_hours).forEach(([day, value]) => {
             payload.append(`operational_hours[${day}]`, value);
         });
@@ -474,6 +539,26 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
             if (menu.photoFile) {
                 payload.append(`menus[${index}][photo]`, menu.photoFile);
             }
+        });
+
+        formState.tables.forEach((table, index) => {
+            if (table.id) {
+                payload.append(`tables[${index}][id]`, table.id.toString());
+            }
+            payload.append(`tables[${index}][table_number]`, table.table_number ? table.table_number.toString() : '');
+            payload.append(`tables[${index}][capacity]`, table.capacity ? table.capacity.toString() : '');
+        });
+
+        formState.removedPhotoIds.forEach((photoId, index) => {
+            payload.append(`removed_photo_ids[${index}]`, photoId.toString());
+        });
+
+        formState.removedMenuIds.forEach((menuId, index) => {
+            payload.append(`removed_menu_ids[${index}]`, menuId.toString());
+        });
+
+        formState.removedTableIds.forEach((tableId, index) => {
+            payload.append(`removed_table_ids[${index}]`, tableId.toString());
         });
 
         formState.removedPhotoIds.forEach((photoId, index) => {
@@ -566,11 +651,28 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
         );
     };
 
-    const tableRows = cafes.map((cafe) => (
+    const getPrimaryPhotoUrl = (photos: CafePhoto[]): string => {
+        const primary = photos.find(photo => photo.is_primary);
+        return primary?.url || photos[0]?.url || PLACEHOLDER_IMAGE;
+    };
+
+    const tableRows = cafes.map((cafe) => {
+        const photoUrl = getPrimaryPhotoUrl(cafe.photos);
+
+        return (
         <TableRow key={cafe.id}>
             <TableCell className="max-w-xs">
-                <div className="font-semibold">{cafe.name}</div>
-                <p className="text-sm text-muted-foreground line-clamp-2">{cafe.description}</p>
+                <div className="flex items-center gap-3">
+                    <img 
+                        src={photoUrl} 
+                        alt={cafe.name} 
+                        className="w-12 h-12 rounded object-cover flex-shrink-0" 
+                    />
+                    <div>
+                        <div className="font-semibold">{cafe.name}</div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{cafe.description}</p>
+                    </div>
+                </div>
             </TableCell>
             <TableCell>
                 <div className='font-semibold'>{cafe.kategori}</div>
@@ -595,76 +697,127 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                 </div>
             </TableCell>
         </TableRow>
-    ));
+        )
+    });
 
     const renderMenuInputs = () => (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <Label className="text-base font-semibold">Menu Items</Label>
                 <Button type="button" variant="outline" size="sm" onClick={handleAddMenu}>
-                    <Plus className="mr-2 h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                     Add Menu
                 </Button>
             </div>
             {formState.menus.length === 0 && <p className="text-sm text-muted-foreground">Belum ada menu ditambahkan.</p>}
             <div className="space-y-4">
                 {formState.menus.map((menu, index) => (
-                    <Card key={`menu-${index}`}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-base font-semibold">Menu #{index + 1}</CardTitle>
+                    <Card key={`menu-${index}`} className='p-4'>
+                        <CardHeader className="flex flex-row items-center justify-between p-0">
+                            <CardTitle className="text-sm font-semibold">Menu #{index + 1}</CardTitle>
                             <Button variant="ghost" size="icon" onClick={() => handleRemoveMenu(index)}>
                                 <XIcon className="h-4 w-4" />
                             </Button>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label>Menu Name</Label>
-                                    <Input value={menu.name} onChange={(e) => handleMenuChange(index, 'name', e.target.value)} />
-                                    {errors[`menus.${index}.name`] && (
-                                        <p className="text-sm text-red-600">{errors[`menus.${index}.name`]}</p>
-                                    )}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Category</Label>
-                                    <Input
-                                        value={menu.category}
-                                        onChange={(e) => handleMenuChange(index, 'category', e.target.value)}
-                                    />
-                                    {errors[`menus.${index}.category`] && (
-                                        <p className="text-sm text-red-600">{errors[`menus.${index}.category`]}</p>
-                                    )}
-                                </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label>Menu Name</Label>
+                                <Input value={menu.name} onChange={(e) => handleMenuChange(index, 'name', e.target.value)} />
+                                {errors[`menus.${index}.name`] && (
+                                    <p className="text-sm text-red-600">{errors[`menus.${index}.name`]}</p>
+                                )}
                             </div>
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label>Price (IDR)</Label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        value={menu.price}
-                                        onChange={(e) => handleMenuChange(index, 'price', e.target.value)}
-                                    />
-                                    {errors[`menus.${index}.price`] && (
-                                        <p className="text-sm text-red-600">{errors[`menus.${index}.price`]}</p>
-                                    )}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Photo (optional)</Label>
-                                    <Input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => handleMenuChange(index, 'photoFile', e.target.files?.[0] || null)}
-                                    />
-                                    {menu.photo_url && (
-                                        <p className="text-xs text-muted-foreground">Current photo will remain if not replaced.</p>
-                                    )}
-                                    {errors[`menus.${index}.photo`] && (
-                                        <p className="text-sm text-red-600">{errors[`menus.${index}.photo`]}</p>
-                                    )}
-                                </div>
+                            <div className="space-y-2">
+                                <Label>Category</Label>
+                                <Input
+                                    value={menu.category}
+                                    onChange={(e) => handleMenuChange(index, 'category', e.target.value)}
+                                />
+                                {errors[`menus.${index}.category`] && (
+                                    <p className="text-sm text-red-600">{errors[`menus.${index}.category`]}</p>
+                                )}
                             </div>
-                        </CardContent>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label>Price (IDR)</Label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    value={menu.price}
+                                    onChange={(e) => handleMenuChange(index, 'price', e.target.value)}
+                                />
+                                {errors[`menus.${index}.price`] && (
+                                    <p className="text-sm text-red-600">{errors[`menus.${index}.price`]}</p>
+                                )}
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Photo (optional)</Label>
+                                <Input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleMenuChange(index, 'photoFile', e.target.files?.[0] || null)}
+                                />
+                                {menu.photo_url && (
+                                    <p className="text-xs text-muted-foreground">Current photo will remain if not replaced.</p>
+                                )}
+                                {errors[`menus.${index}.photo`] && (
+                                    <p className="text-sm text-red-600">{errors[`menus.${index}.photo`]}</p>
+                                )}
+                            </div>
+                        </div>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    );
+
+    const renderTableInputs = () => (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">Table List</Label>
+                <Button type="button" variant="outline" size="sm" onClick={handleAddTable}>
+                    <Plus className="h-4 w-4" />
+                    Add Meja
+                </Button>
+            </div>
+            {formState.tables.length === 0 && <p className="text-sm text-muted-foreground">Belum ada meja ditambahkan.</p>}
+            
+            <div className="space-y-4">
+                {formState.tables.map((table, index) => (
+                    <Card key={`table-${index}`} className="p-4">
+                        <CardHeader className="flex flex-row items-center justify-between p-0">
+                            <CardTitle className="text-sm font-semibold">Meja #{index + 1}</CardTitle>
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveTable(index)} className="h-6 w-6">
+                                <XIcon className="h-4 w-4" />
+                            </Button>
+                        </CardHeader>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label>Table Number</Label>
+                                <Input 
+                                    type="number" 
+                                    min="1"
+                                    value={table.table_number} 
+                                    onChange={(e) => handleTableChange(index, 'table_number', parseInt(e.target.value) || '')} 
+                                />
+                                {errors[`tables.${index}.table_number`] && (
+                                    <p className="text-sm text-red-600">{errors[`tables.${index}.table_number`]}</p>
+                                )}
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Capacity (Pax)</Label>
+                                <Input 
+                                    type="number" 
+                                    min="1"
+                                    value={table.capacity} 
+                                    onChange={(e) => handleTableChange(index, 'capacity', parseInt(e.target.value) || '')} 
+                                />
+                                {errors[`tables.${index}.capacity`] && (
+                                    <p className="text-sm text-red-600">{errors[`tables.${index}.capacity`]}</p>
+                                )}
+                            </div>
+                        </div>
                     </Card>
                 ))}
             </div>
@@ -768,6 +921,11 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                     <Input value={formState.location} onChange={(e) => setFormState({ ...formState, location: e.target.value })} placeholder="Semarang Tengah"/>
                     {errors.location && <p className="text-sm text-red-600">{errors.location}</p>}
                 </div>
+                <div className="space-y-2">
+                    <Label>Google Maps Embed / URL</Label>
+                    <Input value={formState.maps_embed_url} onChange={(e) => setFormState({ ...formState, maps_embed_url: e.target.value })} placeholder="Link URL"/>
+                    {errors.maps_embed_url && <p className="text-sm text-red-600">{errors.maps_embed_url}</p>}
+                </div>
             </div>
 
             <div className="space-y-2">
@@ -868,14 +1026,16 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
             <Separator />
 
             {renderPhotosSection()}
+            {renderVideoSection()}
 
             <Separator />
-
-            {renderVideoSection()}
+            
+            {renderTableInputs()}
 
             <Separator />
 
             {renderMenuInputs()}
+
         </div>
     );
 
@@ -896,6 +1056,18 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                             <h4 className="text-sm font-semibold text-muted-foreground">Description</h4>
                             <p className="mt-2 text-sm text-foreground">{selectedCafe.description}</p>
                         </div>
+
+                        {selectedCafe.maps_embed_url && (
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1">Maps</h4>
+                                <div className="w-full aspect-video rounded-lg overflow-hidden border">
+                                    <div 
+                                        className="w-sm"
+                                        dangerouslySetInnerHTML={{ __html: selectedCafe.maps_embed_url }}
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         <div className="grid gap-4 md:grid-cols-2">
                             <Card>
@@ -918,6 +1090,25 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                                 </CardContent>
                             </Card>
                         </div>
+
+                        {selectedCafe.tables.length > 0 && (
+                            <div className="space-y-3">
+                                <h4 className="text-sm font-semibold text-muted-foreground">Meja</h4>
+                                <div className="grid gap-3 md:grid-cols-3">
+                                    {selectedCafe.tables.map((table) => (
+                                        <Card key={table.id} className="p-3">
+                                            <div className="flex items-center gap-3">
+                                                <Sofa className="h-6 w-6 text-primary" />
+                                                <div>
+                                                    <p className="font-semibold text-lg">Meja {table.table_number}</p>
+                                                    <p className="text-sm text-muted-foreground">{table.capacity} Orang</p>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {selectedCafe.photos.length > 0 && (
                             <div>
@@ -948,7 +1139,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                                 <div className="grid gap-4 md:grid-cols-2">
                                     {selectedCafe.menus.map((menu) => (
                                         <Card key={menu.id}>
-                                            <CardContent className="flex items-center gap-4 py-4">
+                                            <CardContent className="flex gap-2 items-center">
                                                 {menu.photo_url ? (
                                                     <img
                                                         src={menu.photo_url}
@@ -998,8 +1189,8 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
 
                 <Card>
                     <CardContent className="space-y-4">
-                        <div className="grid gap-4 lg:grid-cols">
-                            <div className="relative max-w-md">
+                        <div className="grid gap-4 flex justify-center items-center">
+                            <div className="relative max-w-xl">
                                 <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                                 <Input
                                     placeholder="Search by name or location..."

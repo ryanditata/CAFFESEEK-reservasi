@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('cafes', function (Blueprint $table) {
@@ -16,6 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->text('description');
             $table->string('location');
+            $table->text('maps_embed_url')->nullable();
             $table->string('video_url')->nullable();
             $table->json('operational_hours')->nullable();
             $table->boolean('has_colokan')->default(false);
@@ -30,9 +28,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('cafes');

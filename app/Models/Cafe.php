@@ -34,5 +34,9 @@ class Cafe extends Model
     {
         return $this->hasMany(CafeMenu::class)->orderBy('name');
     }
+    public function tables(): HasMany
+    {
+        return $this->hasMany(CafeTable::class);
+    }
 }
 
