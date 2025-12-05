@@ -63,6 +63,7 @@ interface Cafe {
     kategori: string;
     description: string;
     location: string;
+    whatsapp: string,
     maps_embed_url: string | null;
     video_url?: string | null;
     operational_hours: OperationalHours;
@@ -92,6 +93,7 @@ interface CafeFormState {
     kategori: string;
     description: string;
     location: string;
+    whatsapp: string;
     maps_embed_url: string;
     has_colokan: boolean;
     has_wifi: boolean;
@@ -109,7 +111,7 @@ interface CafeFormState {
     videoFile: File | null;
     videoPreviewUrl: string | null;
     video_url: string | null;
-    ables: CafeTable[];
+    tables: CafeTable[];
     removedTableIds: number[];
 }
 
@@ -172,6 +174,7 @@ const initialFormState: CafeFormState = {
     kategori: '',
     description: '',
     location: '',
+    whatsapp: '',
     maps_embed_url: '',
     has_colokan: false,
     has_wifi: false,
@@ -187,7 +190,6 @@ const initialFormState: CafeFormState = {
     removedPhotoIds: [],
     removedMenuIds: [],
     tables: [],
-    removedMenuIds: [],
     removedTableIds: [],
     videoFile: null,
     videoPreviewUrl: null,
@@ -239,7 +241,6 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                 facilities: selectedFacilities,
             },
             {
-                preserveState: true,
                 replace: true,
                 preserveScroll: true,
             },
@@ -276,6 +277,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                 kategori: cafe.kategori,
                 description: cafe.description,
                 location: cafe.location,
+                whatsapp: cafe.whatsapp ,
                 maps_embed_url: cafe.maps_embed_url || '',
                 has_colokan: cafe.facilities.colokan,
                 has_wifi: cafe.facilities.wifi,
@@ -505,6 +507,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
         payload.append('description', formState.description);
         payload.append('location', formState.location);
         payload.append('maps_embed_url', formState.maps_embed_url);
+        payload.append('whatsapp', formState.whatsapp);
 
         Object.entries(formState.operational_hours).forEach(([day, value]) => {
             payload.append(`operational_hours[${day}]`, value);
@@ -624,6 +627,24 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
         });
     };
 
+    const handleWhatsappChange = (value : string) => {
+        let cleaned = value.replace(/\D/g, "");
+
+        if (cleaned.startsWith("08")) {
+            cleaned = "628" + cleaned.substring(2);
+        } 
+
+        else if (cleaned.startsWith("8") && !cleaned.startsWith("62")) {
+            cleaned = "62" + cleaned;
+        } 
+
+        if (cleaned.length > 15) {
+            cleaned = cleaned.slice(0, 15);
+        }
+
+        setFormState({ ...formState, whatsapp: cleaned });
+    };
+
     const renderFacilities = (facilities: Facilities) => {
         const facilityState: Record<string, boolean> = {
             wifi: facilities.wifi,
@@ -685,13 +706,13 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
             </TableCell>
             <TableCell className="text-end">
                 <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="sm" onClick={() => openDetailModal(cafe)}>
+                    <Button variant="outline" size="sm" onClick={() => openDetailModal(cafe)} className='cursor-pointer'>
                         Detail
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => openEditModal(cafe)}>
+                    <Button variant="outline" size="sm" onClick={() => openEditModal(cafe)} className='cursor-pointer'>
                         Edit
                     </Button>
-                    <Button variant="destructive" size="sm" onClick={() => confirmDelete(cafe)}>
+                    <Button variant="destructive" size="sm" onClick={() => confirmDelete(cafe)} className='cursor-pointer'>
                         Delete
                     </Button>
                 </div>
@@ -704,7 +725,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <Label className="text-base font-semibold">Menu Items</Label>
-                <Button type="button" variant="outline" size="sm" onClick={handleAddMenu}>
+                <Button type="button" variant="outline" size="sm" onClick={handleAddMenu} className='cursor-pointer'>
                     <Plus className="h-4 w-4" />
                     Add Menu
                 </Button>
@@ -715,7 +736,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                     <Card key={`menu-${index}`} className='p-4'>
                         <CardHeader className="flex flex-row items-center justify-between p-0">
                             <CardTitle className="text-sm font-semibold">Menu #{index + 1}</CardTitle>
-                            <Button variant="ghost" size="icon" onClick={() => handleRemoveMenu(index)}>
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveMenu(index)} className='cursor-pointer'>
                                 <XIcon className="h-4 w-4" />
                             </Button>
                         </CardHeader>
@@ -776,7 +797,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <Label className="text-base font-semibold">Table List</Label>
-                <Button type="button" variant="outline" size="sm" onClick={handleAddTable}>
+                <Button type="button" variant="outline" size="sm" onClick={handleAddTable} className='cursor-pointer'>
                     <Plus className="h-4 w-4" />
                     Add Meja
                 </Button>
@@ -788,7 +809,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                     <Card key={`table-${index}`} className="p-4">
                         <CardHeader className="flex flex-row items-center justify-between p-0">
                             <CardTitle className="text-sm font-semibold">Meja #{index + 1}</CardTitle>
-                            <Button variant="ghost" size="icon" onClick={() => handleRemoveTable(index)} className="h-6 w-6">
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveTable(index)} className="h-6 w-6 cursor-pointer">
                                 <XIcon className="h-4 w-4" />
                             </Button>
                         </CardHeader>
@@ -854,7 +875,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                                 <Button
                                     size="icon"
                                     variant="destructive"
-                                    className="absolute right-2 top-2 h-6 w-6"
+                                    className="absolute right-2 top-2 h-6 w-6 cursor-pointer"
                                     onClick={() => removeExistingPhoto(photo.id)}
                                 >
                                     <XIcon className="h-3 w-3" />
@@ -875,7 +896,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                                 <Button
                                     size="icon"
                                     variant="destructive"
-                                    className="absolute right-2 top-2 h-6 w-6"
+                                    className="absolute right-2 top-2 h-6 w-6 cursor-pointer"
                                     onClick={() => removeNewPhoto(index)}
                                 >
                                     <XIcon className="h-3 w-3" />
@@ -926,6 +947,10 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                     <Input value={formState.maps_embed_url} onChange={(e) => setFormState({ ...formState, maps_embed_url: e.target.value })} placeholder="Link URL"/>
                     {errors.maps_embed_url && <p className="text-sm text-red-600">{errors.maps_embed_url}</p>}
                 </div>
+                <div className="space-y-2">
+                    <Label>No WhatsApp</Label>
+                    <Input value={formState.whatsapp} onChange={(e) => handleWhatsappChange(e.target.value)} placeholder="6281234567890"/>
+                </div>
             </div>
 
             <div className="space-y-2">
@@ -964,10 +989,11 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
             <div className="space-y-4">
                 <Label className="text-base font-semibold">Facilities</Label>
                 <div className="grid gap-4 md:grid-cols-3">
-                    <label className="flex items-center gap-2 text-sm font-medium">
+                    <label className="flex items-center gap-2 text-sm font-medium cursor">
                         <Checkbox
                             checked={formState.has_wifi}
                             onCheckedChange={(checked) => setFormState({ ...formState, has_wifi: Boolean(checked) })}
+                            className='cursor-pointer'
                         />
                         WiFi
                     </label>
@@ -975,6 +1001,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                         <Checkbox
                             checked={formState.has_colokan}
                             onCheckedChange={(checked) => setFormState({ ...formState, has_colokan: Boolean(checked) })}
+                            className='cursor-pointer'
                         />
                         Colokan
                     </label>
@@ -982,6 +1009,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                         <Checkbox
                             checked={formState.has_indoor}
                             onCheckedChange={(checked) => setFormState({ ...formState, has_indoor: Boolean(checked) })}
+                            className='cursor-pointer'
                         />
                         Indoor
                     </label>
@@ -989,6 +1017,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                         <Checkbox
                             checked={formState.has_outdoor}
                             onCheckedChange={(checked) => setFormState({ ...formState, has_outdoor: Boolean(checked) })}
+                            className='cursor-pointer'
                         />
                         Outdoor
                     </label>
@@ -996,6 +1025,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                         <Checkbox
                             checked={formState.has_smoking_area}
                             onCheckedChange={(checked) => setFormState({ ...formState, has_smoking_area: Boolean(checked) })}
+                            className='cursor-pointer'
                         />
                         Smoking Area
                     </label>
@@ -1003,6 +1033,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                         <Checkbox
                             checked={formState.meeting_room_available}
                             onCheckedChange={(checked) => setFormState({ ...formState, meeting_room_available: Boolean(checked) })}
+                            className='cursor-pointer'
                         />
                         Meeting Room
                     </label>
@@ -1055,6 +1086,10 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                         <div>
                             <h4 className="text-sm font-semibold text-muted-foreground">Description</h4>
                             <p className="mt-2 text-sm text-foreground">{selectedCafe.description}</p>
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-semibold text-muted-foreground">No WhatsApp</h4>
+                            <p className="mt-2 text-sm text-foreground">{selectedCafe.whatsapp}</p>
                         </div>
 
                         {selectedCafe.maps_embed_url && (
@@ -1180,7 +1215,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Button onClick={openCreateModal}>
+                        <Button onClick={openCreateModal} className='cursor-pointer'>
                             <PlusIcon/>
                             Add Caffe & Resto
                         </Button>
@@ -1190,7 +1225,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                 <Card>
                     <CardContent className="space-y-4">
                         <div className="grid gap-4 flex justify-center items-center">
-                            <div className="relative max-w-xl">
+                            <div className="relative max-w-xl ">
                                 <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
                                 <Input
                                     placeholder="Search by name or location..."
@@ -1210,6 +1245,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                                             variant={isActive ? 'default' : 'outline'}
                                             size="sm"
                                             onClick={() => handleFacilityFilterToggle(facility.key)}
+                                            className='cursor-pointer'
                                         >
                                             {isActive && <Check className="mr-2 h-4 w-4" />}
                                             {facility.label}
@@ -1257,6 +1293,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                                         size="sm"
                                         disabled={pagination.current_page <= 1}
                                         onClick={() => fetchCafes(pagination.current_page - 1)}
+                                        className='cursor-pointer'
                                     >
                                         Prev
                                     </Button>
@@ -1265,6 +1302,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                                         size="sm"
                                         disabled={pagination.current_page >= pagination.last_page}
                                         onClick={() => fetchCafes(pagination.current_page + 1)}
+                                        className='cursor-pointer'
                                     >
                                         Next
                                     </Button>
@@ -1284,10 +1322,10 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                     </DialogHeader>
                     {renderForm()}
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+                        <Button variant="outline" onClick={() => setIsCreateModalOpen(false)} className='cursor-pointer'>
                             Cancel
                         </Button>
-                        <Button onClick={handleSubmit} disabled={isSubmitting}>
+                        <Button onClick={handleSubmit} disabled={isSubmitting} className='cursor-pointer'>
                             {isSubmitting ? 'Saving...' : 'Save'}
                         </Button>
                     </DialogFooter>
@@ -1303,10 +1341,10 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                     </DialogHeader>
                     {renderForm()}
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                        <Button variant="outline" onClick={() => setIsEditModalOpen(false)} className='cursor-pointer'>
                             Cancel
                         </Button>
-                        <Button onClick={handleSubmit} disabled={isSubmitting}>
+                        <Button onClick={handleSubmit} disabled={isSubmitting} className='cursor-pointer'>
                             {isSubmitting ? 'Updating...' : 'Update'}
                         </Button>
                     </DialogFooter>
@@ -1325,10 +1363,10 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
+                        <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)} className='cursor-pointer'>
                             Cancel
                         </Button>
-                        <Button variant="destructive" onClick={handleDelete}>
+                        <Button variant="destructive" onClick={handleDelete} className='cursor-pointer'>
                             Delete
                         </Button>
                     </DialogFooter>

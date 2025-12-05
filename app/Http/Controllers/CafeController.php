@@ -26,6 +26,7 @@ class CafeController extends Controller
         }
 
         $facilityFilters = collect($request->input('facilities', []))->filter();
+        
         $facilityMap = [
             'wifi' => 'has_wifi',
             'colokan' => 'has_colokan',
@@ -41,7 +42,7 @@ class CafeController extends Controller
             }
         }
 
-        $cafes = $query->latest()->paginate(10);
+        $cafes = $query->latest()->paginate(5)->withQueryString();
 
         $cafeItems = collect($cafes->items())->map(fn ($cafe) => self::transformCafe($cafe))->values()->all();
 
@@ -134,6 +135,7 @@ class CafeController extends Controller
             'description' => 'required|string',
             'location' => 'required|string|max:255',
             'maps_embed_url' => 'nullable|string',
+            'whatsapp' => 'required|string|regex:/^628\d{8,12}$/',
             'operational_hours' => 'required|array',
             'operational_hours.monday' => 'required|string|max:255',
             'operational_hours.tuesday' => 'required|string|max:255',
@@ -180,6 +182,7 @@ class CafeController extends Controller
             'kategori' => $request->input('kategori'),
             'description' => $request->input('description'),
             'location' => $request->input('location'),
+            'whatsapp' => $request->input('whatsapp'),
         
             'operational_hours' => $request->input('operational_hours', []), 
   
@@ -363,6 +366,7 @@ class CafeController extends Controller
             'description' => $cafe->description,
             'location' => $cafe->location,
             'maps_embed_url' => $cafe->maps_embed_url ?? null,
+            'whatsapp' => $cafe->whatsapp,
             'video_url' => $cafe->video_url,
             'operational_hours' => $cafe->operational_hours,
             'facilities' => [
