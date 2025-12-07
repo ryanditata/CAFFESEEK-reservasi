@@ -10,7 +10,7 @@ class CustomerController extends Controller
 {
     public function index(Request $request)
     {
-        $cafes = Cafe::with(['photos', 'menus'])->latest()->take(12)->get();
+        $cafes = Cafe::with(['photos', 'menus'])->latest()->get();
         $cafeItems = $cafes->map(fn ($cafe) => CafeController::transformCafe($cafe))->values()->all();
 
         return Inertia::render('customer/index', [

@@ -1205,7 +1205,7 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Manajemen Caffe & Resto" />
+            <Head title="Caffe & Resto" />
             <div className="flex flex-1 flex-col gap-6 rounded-xl p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>

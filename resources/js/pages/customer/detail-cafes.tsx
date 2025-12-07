@@ -128,6 +128,10 @@ export default function DetailCafes({ cafe }: { cafe: CafeDetail }) {
         if (savedCafeId && Number(savedCafeId) !== cafe.id) {
             localStorage.removeItem("cafeseek_cart");
             setCart([]);
+
+            toast.warning("Keranjang Dikosongkan", {
+                description: "Anda berpindah Caffe & Resto. Satu reservasi hanya berlaku untuk satu Caffe & Resto.",
+            });
         }
 
         localStorage.setItem("cafeseek_cafe_id", String(cafe.id));
@@ -349,7 +353,6 @@ export default function DetailCafes({ cafe }: { cafe: CafeDetail }) {
 
         toast.success("Reservasi Berhasil!", {
             description: "Reservasi Terkirim! Cek WhatsApp Anda untuk konfirmasi.",
-            duration: 3000,
         });
 
         window.open(url, "_blank");

@@ -498,7 +498,7 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                                 Explore
                             </button>
                             <a
-                                href="/login"
+                                href="/pricing"
                                 className="rounded-3xl text-black bg-white px-6 py-3 hover:bg-[#BDEE63] transition duration-300 ease-in-out"
                             >
                                 Join Now!
