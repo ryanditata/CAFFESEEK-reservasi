@@ -2,7 +2,7 @@ import Lenis from "@studio-freight/lenis";
 import { router } from "@inertiajs/react";
 import { toast } from "sonner"
 import { Toaster } from "sonner";
-import { MapPin, SearchIcon, ShoppingCart, Sofa, ImageIcon, Plus, Minus, XIcon, Presentation } from "lucide-react";
+import { MapPin, SearchIcon, ShoppingCart, Sofa, ImageIcon, Plus, Minus, XIcon, Presentation, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +36,33 @@ interface CartItem {
     capacity?: number;
     table_number?: number;
 }
+
+const testimonials = [
+  {
+    name: "Rizky A.",
+    role: "Mahasiswa & Freelancer",
+    quote:
+      "Dulu ribet banget cari kafe di Semarang yang ada WiFi kencang dan colokan banyak. Sekarang tinggal buka CaffeSeek, filter lokasi, langsung ketemu tempat ngoding ternyaman!",
+  },
+  {
+    name: "Cynthia Aprilya",
+    role: "Owner Caffe & Resto",
+    quote:
+      "Setelah mendaftarkan caffe saya di CAFFESEEK, jumlah reservasi meningkat dan pelanggan baru jadi lebih mudah menemukan tempat kami.",
+  },
+  {
+    name: "Rafi T.",
+    role: "Mahasiswa",
+    quote:
+      "Semenjak pakai CAFFESEEK, saya tidak perlu bingung cari tempat meeting mendadak. Reservasi ruangnya cepat, jelas, dan foto-fotonya lengkap. Sangat membantu!",
+  },
+  {
+    name: "Aditya Dani",
+    role: "Owner Caffe & Resto",
+    quote:
+      "Setelah bergabung di CaffeSeek, reservasi meja dan meeting room kami jadi lebih terstruktur. Kami tidak pernah lagi double booking.",
+  },
+];
 
 const PLACEHOLDER_IMAGE = "https://placehold.co/800x600/DFDFDF/333?text=CaffeSeek";
 
@@ -271,14 +298,14 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
 
                     <div className="flex items-start justify-between mb-2">
                         <div className="flex flex-col">
-                            <h2 className="text-xl font-bold">Keranjang Reservasi</h2>
-                            <p className="mb-4">Lengkapi seluruh detail di bawah ini untuk reservasi.</p>
+                            <h2 className="text-xl font-bold text-black">Keranjang Reservasi</h2>
+                            <p className="mb-4 text-black">Lengkapi seluruh detail di bawah ini untuk reservasi.</p>
                         </div>
                         <button
                             onClick={() => setShowCart(false)}
                             className="cursor-pointer"
                         >
-                            <XIcon className="h-6 w-6"/>
+                            <XIcon className="h-6 w-6 text-black"/>
                         </button>
                     </div>
 
@@ -337,16 +364,16 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                                                     onClick={() => decreaseItem(item.id, item.type)}
                                                     className="px-2 py-2 bg-gray-200 rounded-lg cursor-pointer"
                                                 >
-                                                    <Minus className="h-3 w-3"/>
+                                                    <Minus className="h-3 w-3 text-black"/>
                                                 </button>
 
-                                                <span>{item.quantity}</span>
+                                                <span className="text-black">{item.quantity}</span>
 
                                                 <button
                                                     onClick={() => increaseItem(item.id, item.type)}
                                                     className="px-2 py-2 bg-gray-200 rounded-lg cursor-pointer"
                                                 >
-                                                    <Plus className="h-3 w-3"/>
+                                                    <Plus className="h-3 w-3 text-black"/>
                                                 </button>
                                             </div>
                                         ) : (
@@ -371,20 +398,20 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                             placeholder="Nama Lengkap"
                             value={customerName}
                             onChange={(e) => setCustomerName(e.target.value)}
-                            className="w-full border rounded-xl p-3"
+                            className="w-full border rounded-xl p-3 placeholder-black/50 text-black"
                         />
                         <input
                             type="text"
                             placeholder="Nomor WhatsApp"
                             value={customerWhatsapp}
                             onChange={(e) => setCustomerWhatsapp(e.target.value)}
-                            className="w-full border rounded-xl p-3"
+                            className="w-full border rounded-xl p-3 placeholder-black/50 text-black"
                         />
                         <input
                             type="date"
                             value={reservationDate}
                             onChange={(e) => setReservationDate(e.target.value)}
-                            className="w-full border rounded-xl p-3 cursor-pointer"
+                            className="w-full border rounded-xl p-3 cursor-pointer text-black"
                         />
                         {cart.some((i) => i.type === "meeting_room") ? (
                             <>
@@ -393,7 +420,7 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                                     placeholder="Start Time"
                                     value={meetingStart}
                                     onChange={(e) => setMeetingStart(e.target.value)}
-                                    className="w-full border rounded-xl p-3 cursor-pointer"
+                                    className="w-full border rounded-xl p-3 cursor-pointer text-black"
                                 />
 
                                 <input
@@ -401,7 +428,7 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                                     placeholder="End Time"
                                     value={meetingEnd}
                                     onChange={(e) => setMeetingEnd(e.target.value)}
-                                    className="w-full border rounded-xl p-3 cursor-pointer"
+                                    className="w-full border rounded-xl p-3 cursor-pointer text-black"
                                 />
                             </>
                         ) : (
@@ -409,7 +436,7 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                                 type="time"
                                 value={reservationTime}
                                 onChange={(e) => setReservationTime(e.target.value)}
-                                className="w-full border rounded-xl p-3 cursor-pointer"
+                                className="w-full border rounded-xl p-3 cursor-pointer text-black"
                             />
                         )}
                     </div>
@@ -462,7 +489,7 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                 >
                     <ShoppingCart className="w-4 h-4 md:h-5 md:w-5" />
                     {getTotalItems() > 0 && (
-                        <Badge className="absolute -top-2 -right-1 md:-top-2 md:-right-2 flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full p-0">
+                        <Badge className="absolute -top-2 -right-1 md:-top-2 md:-right-2 flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full p-0 bg-black text-white">
                             {getTotalItems()}
                         </Badge>
                     )}
@@ -603,6 +630,193 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                         )}
                     </div>
                 </div>
+            </section>
+
+            {/* Testimony */}
+            <section id="testimony" className="relative z-10 bg-white py-16 md:py-24">
+                <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 md:px-6 lg:px-0">
+
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <h2 className="text-3xl font-extrabold text-[#1F1F1F] md:text-4xl mb-10">
+                                Kata Mereka Tentang CaffeSeek
+                            </h2>
+                        </div>
+                    </div>
+
+                    <div className="flex overflow-x-auto no-scrollbar gap-6 pb-4">
+                        {testimonials.map((testimonial, index) => (
+                            <article
+                                key={index}
+                                className="relative flex flex-col overflow-hidden rounded-[32px] border bg-white shadow-lg transition flex-shrink-0 w-[80%] sm:w-[360px] md:w-[380px] p-8"
+                            >
+                                <div className="flex-grow">
+                                    <h3 className="text-xl font-bold text-[#131313]">
+                                        {testimonial.name}
+                                    </h3>
+                                    <p className="mt-1 text-sm text-[#9AA05B]">
+                                        {testimonial.role}
+                                    </p>
+
+                                    <p className="mt-6 text-base text-[#3B3B3B] leading-relaxed">
+                                        {testimonial.quote}
+                                    </p>
+                                </div>
+
+                                <img
+                                    src="/images/IconeTestimoni.png"
+                                    alt="Quote Icon"
+                                    className="absolute bottom-8 right-8 w-8 opacity-60"
+                                />
+                            </article>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Contacts */}
+            <section id="contacts" className="bg-[#1D1C1C] text-white py-10 p-7">
+                <div className="w-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-7">
+                    <div>
+                        <img
+                            src="/images/logo-navbar.png"
+                            alt="CONTACTS DINACOM 2026"
+                            className="h-20"
+                        />
+                        
+                        <div className="flex gap-4 mt-4">
+                            <div className="w-12 h-12 bg-[#2B2A2A] rounded-full flex items-center justify-center">
+                                <a
+                                    href="https://www.instagram.com/caffeseek.id"
+                                    target="_blank"
+                                >
+                                    <img src="/images/icon-ig.svg" alt="Icon Instagram" />
+                                </a>
+                            </div>
+
+                            <div className="w-12 h-12 bg-[#2B2A2A] rounded-full flex items-center justify-center">
+                                <a
+                                    href="https://wa.me/6288215297329"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <img src="/images/icon-wa.svg" alt="Icon Whatsapp" />
+                                </a>
+                                </div>
+                                <div className="w-12 h-12 bg-[#2B2A2A] rounded-full flex items-center justify-center">
+                                <a 
+                                    href=""
+                                    target="_blank"
+                                >
+                                    <img src="/images/icon-tiktok.svg" alt="Icon Tiktok" />
+                                </a>
+                                </div>
+                                <div className="w-12 h-12 bg-[#2B2A2A] rounded-full flex items-center justify-center">
+                                <a 
+                                    href=""
+                                    target="_blank"
+                                >
+                                    <img src="/images/icon-web.svg" alt="Icon Website" />
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="md:ml-18">
+                        <h2 className="text-xl font-bold mb-6">Contact</h2>
+                        <div className="flex items-center gap-3 mb-6">
+                            <img src="/images/icon-wa2.svg" alt="Icon WhatsApp" className="w-9" />
+                            <div>
+                                <p className="font-bold">Admin 1</p>
+                                <a
+                                    href="https://wa.me/6288215297329"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-white hover:text-[#BDEE63] transition-colors"
+                                >
+                                    088215297329
+                                </a>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <img src="/images/icon-wa2.svg" alt="Icon WhatsApp" className="w-9" />
+                            <div>
+                                <p className="font-bold">Admin 2</p>
+                                <a
+                                    href="https://wa.me/6288215297329"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-white hover:text-[#BDEE63] transition-colors"
+                                >
+                                    088215297329
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="md:ml-18">
+                        <h2 className="text-xl font-bold mb-6">Explore</h2>
+                        <div className="space-y-3 text-white">
+                            <a
+                            onClick={() => scrollToSection("hero")}
+                            className="cursor-pointer hover:text-[#BDEE63] transition-colors block"
+                            >
+                            Home
+                            </a>
+                            <a
+                            onClick={() => scrollToSection("cafes")}
+                            className="cursor-pointer hover:text-[#BDEE63] transition-colors block"
+                            >
+                            Caffe & Resto
+                            </a>
+                            <a
+                            onClick={() => scrollToSection("testimony")}
+                            className="cursor-pointer hover:text-[#BDEE63] transition-colors block"
+                            >
+                            Testimony
+                            </a>
+                            <a
+                            href="/pricing"
+                            className="cursor-pointer hover:text-[#BDEE63] transition-colors block"
+                            >
+                            Join Now
+                            </a>
+                            <a
+                            onClick={() => scrollToSection("contacts")}
+                            className="cursor-pointer hover:text-[#BDEE63] transition-colors block"
+                            >
+                            Contacts
+                            </a>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 className="text-xl font-bold mb-6">
+                            Subscribe to our Newsletter
+                        </h2>
+                        <p className="mb-3">Email*</p>
+
+                        <input
+                            type="email"
+                            placeholder="Your email here"
+                            className="w-70 bg-transparent border border-[#7B7C82] rounded-lg p-2 text-white placeholder-[#9AA5B3] focus:outline-none"
+                        />
+
+                        <p className="text-xs mt-3">By subscribing you agree to our</p>
+
+                        <button 
+                            onClick={() => router.get("/pricing")}
+                            className="mt-4 bg-[#BDEE63] cursor-pointer text-sm text-black px-8 py-3 rounded-full flex items-center justify-center gap-4 font-semibold">
+                            Subscribe
+                            <ArrowRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+
+                <p className="text-center mt-12 text-sm">
+                    © {new Date().getFullYear()} CaffeSeek, All Rights Reserved
+                </p>
             </section>
 
         </div>

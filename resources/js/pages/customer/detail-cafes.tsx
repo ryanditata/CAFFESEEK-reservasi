@@ -369,14 +369,14 @@ export default function DetailCafes({ cafe }: { cafe: CafeDetail }) {
                     
                     <div className="flex items-start justify-between mb-2">
                         <div className="flex flex-col">
-                            <h2 className="text-xl font-bold">Keranjang Reservasi</h2>
-                            <p className="mb-4">Lengkapi seluruh detail di bawah ini untuk reservasi.</p>
+                            <h2 className="text-xl font-bold text-black">Keranjang Reservasi</h2>
+                            <p className="mb-4 text-black">Lengkapi seluruh detail di bawah ini untuk reservasi.</p>
                         </div>
                         <button
                             onClick={() => setShowCart(false)}
                             className="cursor-pointer"
                         >
-                            <XIcon className="h-6 w-6"/>
+                            <XIcon className="h-6 w-6 text-black"/>
                         </button>
                     </div>
 
@@ -435,16 +435,16 @@ export default function DetailCafes({ cafe }: { cafe: CafeDetail }) {
                                                     onClick={() => decreaseItem(item.id, item.type)}
                                                     className="px-2 py-2 bg-gray-200 rounded-lg cursor-pointer"
                                                 >
-                                                    <Minus className="h-3 w-3"/>
+                                                    <Minus className="h-3 w-3 text-black"/>
                                                 </button>
 
-                                                <span>{item.quantity}</span>
+                                                <span className="text-black">{item.quantity}</span>
 
                                                 <button
                                                     onClick={() => increaseItem(item.id, item.type)}
                                                     className="px-2 py-2 bg-gray-200 rounded-lg cursor-pointer"
                                                 >
-                                                    <Plus className="h-3 w-3"/>
+                                                    <Plus className="h-3 w-3 text-black"/>
                                                 </button>
                                             </div>
                                         ) : (
@@ -469,20 +469,20 @@ export default function DetailCafes({ cafe }: { cafe: CafeDetail }) {
                             placeholder="Nama Lengkap"
                             value={customerName}
                             onChange={(e) => setCustomerName(e.target.value)}
-                            className="w-full border rounded-xl p-3"
+                            className="w-full border rounded-xl p-3 placeholder-black/50 text-black"
                         />
                         <input
                             type="text"
                             placeholder="Nomor WhatsApp"
                             value={customerWhatsapp}
                             onChange={(e) => setCustomerWhatsapp(e.target.value)}
-                            className="w-full border rounded-xl p-3"
+                            className="w-full border rounded-xl p-3 placeholder-black/50 text-black"
                         />
                         <input
                             type="date"
                             value={reservationDate}
                             onChange={(e) => setReservationDate(e.target.value)}
-                            className="w-full border rounded-xl p-3 cursor-pointer"
+                            className="w-full border rounded-xl p-3 cursor-pointer text-black"
                         />
                         {cart.some((i) => i.type === "meeting_room") ? (
                             <>
@@ -491,7 +491,7 @@ export default function DetailCafes({ cafe }: { cafe: CafeDetail }) {
                                     placeholder="Start Time"
                                     value={meetingStart}
                                     onChange={(e) => setMeetingStart(e.target.value)}
-                                    className="w-full border rounded-xl p-3 cursor-pointer"
+                                    className="w-full border rounded-xl p-3 cursor-pointer text-black"
                                 />
 
                                 <input
@@ -499,7 +499,7 @@ export default function DetailCafes({ cafe }: { cafe: CafeDetail }) {
                                     placeholder="End Time"
                                     value={meetingEnd}
                                     onChange={(e) => setMeetingEnd(e.target.value)}
-                                    className="w-full border rounded-xl p-3 cursor-pointer"
+                                    className="w-full border rounded-xl p-3 cursor-pointer text-black"
                                 />
                             </>
                         ) : (
@@ -507,7 +507,7 @@ export default function DetailCafes({ cafe }: { cafe: CafeDetail }) {
                                 type="time"
                                 value={reservationTime}
                                 onChange={(e) => setReservationTime(e.target.value)}
-                                className="w-full border rounded-xl p-3 cursor-pointer"
+                                className="w-full border rounded-xl p-3 cursor-pointer text-black"
                             />
                         )}
                     </div>
@@ -546,7 +546,7 @@ export default function DetailCafes({ cafe }: { cafe: CafeDetail }) {
                     >
                         <ShoppingCart className="w-4 h-4 md:h-5 md:w-5" />
                         {getTotalItems() > 0 && (
-                            <Badge className="absolute -top-2 -right-1 md:-top-2 md:-right-2 flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full p-0">
+                            <Badge className="absolute -top-2 -right-1 md:-top-2 md:-right-2 flex h-5 w-5 md:h-6 md:w-6 items-center justify-center rounded-full p-0 bg-black text-white">
                                 {getTotalItems()}
                             </Badge>
                         )}
