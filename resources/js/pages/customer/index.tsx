@@ -6,6 +6,7 @@ import { MapPin, SearchIcon, ShoppingCart, Sofa, ImageIcon, Plus, Minus, XIcon, 
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { motion } from "framer-motion";
 
 interface CafePhoto {
     id: number;
@@ -36,6 +37,20 @@ interface CartItem {
     capacity?: number;
     table_number?: number;
 }
+
+const mitra = [ "/images/logo-navbar.png",
+                "/images/logo-navbar.png",
+                "/images/logo-navbar.png",
+                "/images/logo-navbar.png",
+                "/images/logo-navbar.png",
+                "/images/logo-navbar.png",
+                "/images/logo-navbar.png",
+                "/images/logo-navbar.png",
+                "/images/logo-navbar.png",
+                "/images/logo-navbar.png",
+                "/images/logo-navbar.png",
+                "/images/logo-navbar.png",
+];
 
 const testimonials = [
   {
@@ -511,7 +526,7 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                             <p className="font-bold">CAFFESEEK</p>
                         </div>
                         <h1 className="text-[28px] md:text-[54px] lg:text-[60px] mb-6 font-audiowide font-bold text-center leading-none">
-                            Temukan dan Pilih <br /> Café & Resto Favorit Anda
+                            Temukan dan Pilih <br /> Caffé & Resto Favorit Anda
                         </h1>
                         <p className="px-6 md:px-0 font-semibold text-center text-[#333333] text-lg md:text-xl mb-8 flex items-center justify-center gap-2">
                             <MapPin className="h-6 w-6 text-[#BDEE63]" />
@@ -556,7 +571,7 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                 <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 md:px-6 lg:px-0">
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
-                            <p className="text-sm font-semibold uppercase tracking-[0.4em] text-[#9AA05B]">Daftar Café & Resto</p>
+                            <p className="text-sm font-semibold uppercase tracking-[0.4em] text-[#9AA05B]">Daftar Caffé & Resto</p>
                             <h2 className="text-3xl font-extrabold text-[#1F1F1F] md:text-4xl mb-10">Eksplorasi Caffe & Resto Pilihan Kami</h2>
                         </div>
 
@@ -629,6 +644,34 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                             </p>
                         )}
                     </div>
+                </div>
+            </section>
+
+            {/* Mitra */}
+            <section id="mitra" className="w-full bg-white">
+                <div className="w-full pt-14 md:pt-20">
+                    <p className="text-sm text-center font-semibold uppercase tracking-[0.4em] text-[#9AA05B]">Mitra Caffé & Resto</p>
+                </div>
+
+                <div className="overflow-hidden w-full mt-6 md:mt-8 lg:mt-10">
+                    <motion.div
+                    className="flex gap-8 items-center"
+                    animate={{ x: ["0%", "-200%"] }}
+                    transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                    >
+                    {mitra.concat(mitra).map((logo, index) => (
+                        <div
+                        key={index}
+                        className="flex items-center justify-center shrink-0"
+                        >
+                        <img
+                            src={logo}
+                            alt={`mitra ${index + 1}`}
+                            className="max-h-10 sm:max-h-14 md:max-h-20 lg:max-h-24 object-contain"
+                        />
+                        </div>
+                    ))}
+                    </motion.div>
                 </div>
             </section>
 
@@ -769,6 +812,12 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                             className="cursor-pointer hover:text-[#BDEE63] transition-colors block"
                             >
                             Caffe & Resto
+                            </a>
+                            <a
+                            onClick={() => scrollToSection("mitra")}
+                            className="cursor-pointer hover:text-[#BDEE63] transition-colors block"
+                            >
+                            Mitra
                             </a>
                             <a
                             onClick={() => scrollToSection("testimony")}
