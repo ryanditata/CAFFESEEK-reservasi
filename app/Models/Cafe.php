@@ -25,6 +25,23 @@ class Cafe extends Model
         'meeting_room_capacity' => 'integer',
     ];
 
+    protected $appends = ['facilities'];
+
+    public function getFacilitiesAttribute()
+    {
+        return [
+            'wifi' => $this->has_wifi,
+            'colokan' => $this->has_colokan,
+            'indoor' => $this->has_indoor,
+            'outdoor' => $this->has_outdoor,
+            'smoking_area' => $this->has_smoking_area,
+            'meeting_room' => [
+                'available' => $this->meeting_room_available,
+                'capacity' => $this->meeting_room_capacity,
+            ]
+        ];
+    }
+
     public function photos(): HasMany
     {
         return $this->hasMany(CafePhoto::class)->orderBy('sort_order');

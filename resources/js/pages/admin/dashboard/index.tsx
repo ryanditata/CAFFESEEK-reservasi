@@ -3,26 +3,36 @@ import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Coffee, Utensils, Sofa, Users, TrendingUp, CalendarDays, Zap, Clock, MapPin, Store } from "lucide-react";
+import { Coffee, Utensils, Sofa, Users, TrendingUp, MapPin, Store } from "lucide-react";
 import AppLayout from '@/layouts/app-layout';
 import { Head, router } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale'; 
 import { BreadcrumbItem } from '@/types';
-import { Cafe } from '@/types/cafes'; 
-
+import { Cafe } from '@/types/cafes';
+import AnalyticsChart from "@/components/AnalyticsChart";
 
 interface Props {
   cafes: Cafe[];
   facilities: Facilities;
-  totalUsers: number; 
+  totalUsers: number;
+  chartData: { month: string; total: number }[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
   { title: 'Dashboard', href: '/admin/dashboard' },
 ];
 
-const AdminDashboard: React.FC<Props> = ({ cafes = [], totalUsers = 100 }) => {
+const PLACEHOLDER_IMAGE = "https://placehold.co/80x80/DFDFDF/333?text=Img";
+
+const getPrimaryPhotoUrl = (photos: CafePhoto[] = []): string => {
+    if (!photos || photos.length === 0) return PLACEHOLDER_IMAGE;
+
+    const primary = photos.find(photo => photo.is_primary);
+    return primary?.url || photos[0]?.url || PLACEHOLDER_IMAGE;
+};
+
+const AdminDashboard: React.FC<Props> = ({ cafes = [], chartData = []}) => {
   const totalCafes = cafes.length;
   const totalTables = cafes.reduce((acc, cafe) => acc + (cafe.tables?.length || 0), 0);
   const totalMenus = cafes.reduce((acc, cafe) => acc + (cafe.menus?.length || 0), 0);
@@ -103,9 +113,7 @@ const AdminDashboard: React.FC<Props> = ({ cafes = [], totalUsers = 100 }) => {
                     <CardTitle>Overview Caffe & Resto</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg text-muted-foreground border border-dashed">
-                        <TrendingUp className="w-6 h-6 mr-2" /> Data Grafis Bulanan
-                    </div>
+                  <AnalyticsChart data={chartData} />
                 </CardContent>
             </Card>
 
@@ -152,6 +160,7 @@ const AdminDashboard: React.FC<Props> = ({ cafes = [], totalUsers = 100 }) => {
           <CardHeader>
             <CardTitle>Detail Caffe & Resto Terbaru</CardTitle>
           </CardHeader>
+
           <CardContent>
             {latestCafes.length === 0 ? (
               <p className="text-center py-8 text-muted-foreground">Tidak ada kafe terbaru untuk ditampilkan secara detail.</p>
@@ -160,37 +169,74 @@ const AdminDashboard: React.FC<Props> = ({ cafes = [], totalUsers = 100 }) => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Caffe & Resto</TableHead>
-                      <TableHead>Lokasi</TableHead>
-                      <TableHead>Fasilitas Utama</TableHead>
-                      <TableHead className="text-center">Meja</TableHead>
-                      <TableHead className="text-center">Menu</TableHead>
-                      <TableHead>Dibuat Pada</TableHead>
+                      <TableHead className="w-[400px]">Caffe & Resto</TableHead>
+                      <TableHead className="w-[280px]">Lokasi</TableHead>
+                      <TableHead className="w-[280px]">Fasilitas Utama</TableHead>
+                      <TableHead className="text-center w-[10px]">Meja</TableHead>
+                      <TableHead className="text-center w-[10px]">Menu</TableHead>
+                      <TableHead className="w-[180px]">Dibuat Pada</TableHead>
                     </TableRow>
                   </TableHeader>
+
                   <TableBody>
-                    {latestCafes.map((cafe) => (
-                      <TableRow key={cafe.id}>
-                        <TableCell className="font-medium">{cafe.name}</TableCell>
-                        <TableCell>{cafe.location}</TableCell>
-                        <TableCell className="max-w-md">
-                            <div className="flex flex-wrap">
-                                {formatFacilityBadges(cafe)}
+                    {latestCafes.map((cafe) => {
+                      const photoUrl = getPrimaryPhotoUrl(cafe.photos);
+
+                      return (
+                        <TableRow key={cafe.id}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={photoUrl}
+                                alt={cafe.name}
+                                className="w-14 h-14 rounded object-cover flex-shrink-0"
+                              />
+
+                              <div className="flex flex-col">
+                                <p className="font-semibold text-sm">{cafe.name || "Tidak ada nama."}</p>
+
+                                <Badge className="w-fit mt-1 text-xs">
+                                  {cafe.kategori || "Tanpa Kategori"}
+                                </Badge>
+
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2 max-w-xs">
+                                  {cafe.description || "Tidak ada deskripsi."}
+                                </p>
+                              </div>
                             </div>
-                        </TableCell>
-                        <TableCell className="text-center">{cafe.tables?.length || 0}</TableCell>
-                        <TableCell className="text-center">{cafe.menus?.length || 0}</TableCell>
-                        <TableCell className="text-sm">
-                            {cafe.created_at ? format(new Date(cafe.created_at), 'dd MMM yyyy', { locale: id }) : '-'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              {cafe.location || "Tidak ada lokasi."}
+                            </div>
+                          </TableCell>
+
+                          <TableCell className="max-w-md">
+                            <div className="flex flex-wrap">
+                              {formatFacilityBadges(cafe) || "Tidak ada fasilitas."}
+                            </div>
+                          </TableCell>
+
+                          <TableCell className="text-center">{cafe.tables?.length || 0}</TableCell>
+                          <TableCell className="text-center">{cafe.menus?.length || 0}</TableCell>
+
+                          <TableCell className="text-sm">
+                            {cafe.created_at
+                              ? format(new Date(cafe.created_at), "dd MMM yyyy", { locale: id })
+                              : "-"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
             )}
           </CardContent>
         </Card>
+
       </div>
     </AppLayout>
   );

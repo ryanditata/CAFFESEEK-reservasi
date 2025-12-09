@@ -19,6 +19,7 @@ interface CafeDetail {
     name: string;
     kategori: string;
     location: string;
+    description: string;
     whatsapp: string;
     photos: CafePhoto[];
 }
@@ -627,6 +628,7 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                                                       <MapPin className="h-4 w-4 text-[#BDEE63]" />
                                                       {cafe.location}
                                                   </p>
+                                                  <p className="mt-1 text-[#4A4A4A]">{cafe.description}</p>
                                               </div>
                                               <button
                                                   onClick={() => router.get(`/cafes/${cafe.id}`)}

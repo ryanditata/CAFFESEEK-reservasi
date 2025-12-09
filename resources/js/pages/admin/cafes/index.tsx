@@ -690,18 +690,20 @@ export default function CafesIndex({ cafes, filters, pagination }: Props) {
                         className="w-12 h-12 rounded object-cover flex-shrink-0" 
                     />
                     <div>
-                        <div className="font-semibold">{cafe.name}</div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{cafe.description}</p>
+                        <div className="font-semibold">{cafe.name || "Tidak ada nama."}</div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{cafe.description || "Tidak ada deskripsi."}</p>
                     </div>
                 </div>
             </TableCell>
             <TableCell>
-                <div className='font-semibold'>{cafe.kategori}</div>
+                <Badge className="w-fit text-xs">
+                    {cafe.kategori || "Tanpa Kategori"}
+                </Badge>
             </TableCell>
             <TableCell>
                 <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <p className="font-medium">{cafe.location}</p>
+                    <p className="font-medium">{cafe.location || "Tidak ada lokasi."}</p>
                 </div>
             </TableCell>
             <TableCell className="text-end">
