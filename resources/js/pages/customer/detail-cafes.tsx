@@ -568,7 +568,7 @@ export default function DetailCafes({ cafe }: { cafe: CafeDetail }) {
                                 {selectedCafe.video_url && (
                                     <a
                                         href={selectedCafe.video_url}
-                                        target="_blank"
+                                        target="_self"
                                         rel="noreferrer"
                                         className="absolute inset-0 flex items-center justify-center bg-black/30 text-white transition hover:bg-black/50"
                                     >
