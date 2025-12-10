@@ -40,17 +40,17 @@ interface CartItem {
 }
 
 const mitra = [ "/images/logo-navbar.png",
+                "/images/7Seven.jpg",
                 "/images/logo-navbar.png",
+                "/images/7Seven.jpg",
                 "/images/logo-navbar.png",
+                "/images/7Seven.jpg",
                 "/images/logo-navbar.png",
+                "/images/7Seven.jpg",
                 "/images/logo-navbar.png",
+                "/images/7Seven.jpg",
                 "/images/logo-navbar.png",
-                "/images/logo-navbar.png",
-                "/images/logo-navbar.png",
-                "/images/logo-navbar.png",
-                "/images/logo-navbar.png",
-                "/images/logo-navbar.png",
-                "/images/logo-navbar.png",
+                "/images/7Seven.jpg",
 ];
 
 const testimonials = [
