@@ -2,7 +2,9 @@ import Lenis from "@studio-freight/lenis";
 import { router } from "@inertiajs/react";
 import { toast } from "sonner"
 import { Toaster } from "sonner";
-import { MapPin, SearchIcon, ShoppingCart, Sofa, ImageIcon, Plus, Minus, XIcon, Presentation, ArrowRight, Plug, Wifi, DoorClosed, SunMedium, Cigarette, Users } from "lucide-react";
+import { MapPin, SearchIcon, ShoppingCart, Sofa, ImageIcon, Plus, Minus, XIcon,
+        Presentation, ArrowRight, Plug, Wifi, DoorClosed, SunMedium, Cigarette, Users,
+        History } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -102,15 +104,6 @@ const currencyFormatter = new Intl.NumberFormat("id-ID", {
     minimumFractionDigits: 0,
 });
 
-const facilityLabels: Record<string, string> = {
-    wifi: 'WiFi',
-    colokan: 'Colokan',
-    indoor: 'Indoor',
-    outdoor: 'Outdoor',
-    smoking_area: 'Smoking',
-    meeting_room: 'Meeting Room',
-  };
-
 const facilityConfig: Record<
   string,
   { label: string; icon: JSX.Element }
@@ -141,7 +134,6 @@ const facilityConfig: Record<
   },
 };
 
-
 const formatFacilityBadges = (cafe: Cafe) => {
   const facilities: Record<string, any> = cafe.facilities || {};
 
@@ -169,6 +161,24 @@ const formatFacilityBadges = (cafe: Cafe) => {
     });
 };
 
+const matchesFacilitySearch = (cafe: Cafe, query: string) => {
+  if (!query) return true;
+
+  const q = query.toLowerCase();
+  const facilities = cafe.facilities || {};
+
+  return Object.entries(facilities).some(([key, value]) => {
+    const label = facilityConfig[key]?.label.toLowerCase() || key.toLowerCase();
+
+    if (!label.includes(q)) return false;
+
+    if (typeof value === "boolean") return value;
+    if (typeof value === "object" && value?.available) return true;
+
+    return false;
+  });
+};
+
 export default function CustomerIndex({ cafes: initialCafes }: Props) {
     const [offsetY, setOffsetY] = useState(0);
     const [cafes] = useState<CafeDetail[]>(initialCafes);
@@ -184,6 +194,19 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
     const [reservationTime, setReservationTime] = useState("");
     const [meetingStart, setMeetingStart] = useState("");
     const [meetingEnd, setMeetingEnd] = useState("");
+
+    const [searchHistory, setSearchHistory] = useState<string[]>([]);
+    const [showHistory, setShowHistory] = useState(false);
+
+    const SEARCH_HISTORY_KEY = "cafeseek_search_history";
+    const MAX_HISTORY = 5;
+
+    useEffect(() => {
+        const saved = localStorage.getItem(SEARCH_HISTORY_KEY);
+        if (saved) {
+            setSearchHistory(JSON.parse(saved));
+        }
+    }, []);
 
     useEffect(() => {
         const savedCart = localStorage.getItem("cafeseek_cart");
@@ -224,6 +247,20 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
         if (el) {
             el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
         }
+    };
+
+    const saveSearchHistory = (query: string) => {
+        if (!query.trim()) return;
+
+        setSearchHistory(prev => {
+            const updated = [
+            query,
+            ...prev.filter(item => item !== query)
+            ].slice(0, MAX_HISTORY);
+
+            localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(updated));
+            return updated;
+        });
     };
 
     const getTotalItems = () => {
@@ -361,15 +398,20 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
     const uniqueLocations = [...new Set(cafes.map((cafe) => cafe.location))];
 
     const filteredCafes = cafes.filter((cafe) => {
-        const matchesSearch =
-            cafe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            cafe.kategori.toLowerCase().includes(searchQuery.toLowerCase());
+        const q = searchQuery.toLowerCase();
+
+        const matchesText =
+            cafe.name.toLowerCase().includes(q) ||
+            cafe.kategori.toLowerCase().includes(q);
+
+        const matchesFacility = matchesFacilitySearch(cafe, q);
 
         const matchesLocation =
             filterLocation === "" ||
-            filterLocation === "all" || cafe.location === filterLocation;
+            filterLocation === "all" ||
+            cafe.location === filterLocation;
 
-        return matchesSearch && matchesLocation;
+        return (matchesText || matchesFacility) && matchesLocation;
     });
 
     return (
@@ -561,10 +603,47 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                         <SearchIcon className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-black"/>
                         <input 
                             className="pl-10 pr-4 py-1 md:py-2 lg:py-2 bg-white border border-black rounded-full w-3xs md:w-xs lg:w-sm"
-                            placeholder="Search by name or kategori..."
+                            placeholder="Cari nama, kategori, atau fasilitas..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => setShowHistory(true)}
+                            onBlur={() => setTimeout(() => setShowHistory(false), 200)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                saveSearchHistory(searchQuery);
+                                }
+                            }}
                         />
+                        {showHistory && searchHistory.length > 0 && (
+                        <div className="absolute top-full mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+                            {searchHistory.map((item, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => {
+                                setSearchQuery(item);
+                                saveSearchHistory(item);
+                                setShowHistory(false);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-2 text-left text-md hover:bg-gray-100 rounded-t-xl cursor-pointer"
+                            >
+                                <History className="h-4 w-4" />
+                                <span>{item}</span>
+                            </button>
+                            ))}
+
+                            <div className="border-t border-gray-200"/>
+
+                            <button
+                            onClick={() => {
+                                setSearchHistory([]);
+                                localStorage.removeItem(SEARCH_HISTORY_KEY);
+                            }}
+                            className="w-full text-center text-xs text-gray-500 underline py-2 cursor-pointer"
+                            >
+                            Hapus Riwayat
+                            </button>
+                        </div>
+                        )}
                     </div>
                 </div>
 
