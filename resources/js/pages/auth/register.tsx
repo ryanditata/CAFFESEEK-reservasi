@@ -13,7 +13,6 @@ export default function Register() {
         <AuthLayout title="Create an account" description="Enter your details below to create your account">
             <Head title="Register" />
 
-          <div className='border-2 rounded-xl p-10'>
             <Form
                 method="post"
                 action={route('register')}
@@ -96,7 +95,6 @@ export default function Register() {
                     </>
                 )}
             </Form>
-          </div>
           
         </AuthLayout>
     );

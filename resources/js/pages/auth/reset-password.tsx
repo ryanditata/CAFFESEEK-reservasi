@@ -17,7 +17,6 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
         <AuthLayout title="Reset password" description="Please enter your new password below">
             <Head title="Reset password" />
 
-          <div className='border-2 rounded-xl p-10'>
             <Form
                 method="post"
                 action={route('password.store')}
@@ -66,7 +65,6 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                     </div>
                 )}
             </Form>
-          </div>
         </AuthLayout>
     );
 }

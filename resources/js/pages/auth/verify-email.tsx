@@ -11,7 +11,6 @@ export default function VerifyEmail({ status }: { status?: string }) {
         <AuthLayout title="Verify email" description="Please verify your email address by clicking on the link we just emailed to you.">
             <Head title="Email verification" />
 
-          <div className='border-2 rounded-xl p-10'>
             {status === 'verification-link-sent' && (
                 <div className="mb-4 text-center text-sm font-medium text-green-600">
                     A new verification link has been sent to the email address you provided during registration.
@@ -32,7 +31,6 @@ export default function VerifyEmail({ status }: { status?: string }) {
                     </>
                 )}
             </Form>
-          </div>
           
         </AuthLayout>
     );
