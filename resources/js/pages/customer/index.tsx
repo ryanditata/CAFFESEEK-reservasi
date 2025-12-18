@@ -2,11 +2,12 @@ import Lenis from "@studio-freight/lenis";
 import { router } from "@inertiajs/react";
 import { toast } from "sonner"
 import { Toaster } from "sonner";
-import { MapPin, SearchIcon, ShoppingCart, Sofa, ImageIcon, Plus, Minus, XIcon, Presentation, ArrowRight } from "lucide-react";
+import { MapPin, SearchIcon, ShoppingCart, Sofa, ImageIcon, Plus, Minus, XIcon, Presentation, ArrowRight, Plug, Wifi, DoorClosed, SunMedium, Cigarette, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { motion } from "framer-motion";
+import { Cafe } from '@/types/cafes';
 
 interface CafePhoto {
     id: number;
@@ -26,6 +27,7 @@ interface CafeDetail {
 
 interface Props {
     cafes: CafeDetail[];
+    facilities: Facilities;
 }
 
 interface CartItem {
@@ -99,6 +101,73 @@ const currencyFormatter = new Intl.NumberFormat("id-ID", {
     currency: "IDR",
     minimumFractionDigits: 0,
 });
+
+const facilityLabels: Record<string, string> = {
+    wifi: 'WiFi',
+    colokan: 'Colokan',
+    indoor: 'Indoor',
+    outdoor: 'Outdoor',
+    smoking_area: 'Smoking',
+    meeting_room: 'Meeting Room',
+  };
+
+const facilityConfig: Record<
+  string,
+  { label: string; icon: JSX.Element }
+> = {
+  wifi: {
+    label: 'WiFi',
+    icon: <Wifi className="h-3 w-3 mr-1" />,
+  },
+  colokan: {
+    label: 'Colokan',
+    icon: <Plug className="h-3 w-3 mr-1" />,
+  },
+  indoor: {
+    label: 'Indoor',
+    icon: <DoorClosed className="h-3 w-3 mr-1" />,
+  },
+  outdoor: {
+    label: 'Outdoor',
+    icon: <SunMedium className="h-3 w-3 mr-1" />,
+  },
+  smoking_area: {
+    label: 'Smoking',
+    icon: <Cigarette className="h-3 w-3 mr-1" />,
+  },
+  meeting_room: {
+    label: 'Meeting Room',
+    icon: <Users className="h-3 w-3 mr-1" />,
+  },
+};
+
+
+const formatFacilityBadges = (cafe: Cafe) => {
+  const facilities: Record<string, any> = cafe.facilities || {};
+
+  return Object.entries(facilities)
+    .filter(([_, value]) => {
+      if (typeof value === 'boolean') return value;
+      if (typeof value === 'object' && value !== null && 'available' in value) {
+        return value.available;
+      }
+      return false;
+    })
+    .map(([key]) => {
+      const config = facilityConfig[key];
+
+      return (
+        <Badge
+          key={key}
+          variant="outline"
+          className="mr-1 mt-1 items-center text-xs border-[#BDEE63] bg-[#F9FFE8] text-[#1F1F1F]"
+        >
+          {config?.icon}
+          {config?.label || key}
+        </Badge>
+      );
+    });
+};
 
 export default function CustomerIndex({ cafes: initialCafes }: Props) {
     const [offsetY, setOffsetY] = useState(0);
@@ -617,7 +686,7 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                                                   alt={cafe.name}
                                                   className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                                               />
-                                              <div className="absolute left-4 top-4 rounded-full bg-white/80 px-4 py-1 text-xs font-semibold text-[#3B3B3B]">
+                                              <div className="absolute right-4 top-4 rounded-full bg-white/80 px-4 py-1 text-xs font-semibold text-[#3B3B3B]">
                                                   {cafe.kategori}
                                               </div>
                                           </div>
@@ -629,6 +698,9 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                                                       {cafe.location}
                                                   </p>
                                                   <p className="mt-1 text-[#4A4A4A]">{cafe.description}</p>
+                                                  <div className="mt-2">
+                                                    {formatFacilityBadges(cafe)}
+                                                  </div>
                                               </div>
                                               <button
                                                   onClick={() => router.get(`/cafes/${cafe.id}`)}
