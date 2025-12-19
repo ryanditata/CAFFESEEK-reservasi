@@ -940,12 +940,12 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                             <div>
                                 <p className="font-bold">Admin 2</p>
                                 <a
-                                    href="https://wa.me/6288215297329"
+                                    href="https://wa.me/6281234258462"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-white hover:text-[#BDEE63] transition-colors"
                                 >
-                                    088215297329
+                                    081234258462
                                 </a>
                             </div>
                         </div>
@@ -995,22 +995,13 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
 
                     <div>
                         <h2 className="text-xl font-bold mb-6">
-                            Subscribe to our Newsletter
+                            Gabung Jadi Mitra CaffeSeek
                         </h2>
-                        <p className="mb-3">Email*</p>
-
-                        <input
-                            type="email"
-                            placeholder="Your email here"
-                            className="w-70 bg-transparent border border-[#7B7C82] rounded-lg p-2 text-white placeholder-[#9AA5B3] focus:outline-none"
-                        />
-
-                        <p className="text-xs mt-3">By subscribing you agree to our</p>
-
+                        <p className="mb-3">Perluas jangkauan bisnis Anda, tingkatkan reservasi, dan temukan lebih banyak pelanggan dengan mudah.</p>
                         <button 
                             onClick={() => router.get("/pricing")}
                             className="mt-4 bg-[#BDEE63] cursor-pointer text-sm text-black px-8 py-3 rounded-full flex items-center justify-center gap-4 font-semibold">
-                            Subscribe
+                            Join Now!
                             <ArrowRight className="w-4 h-4" />
                         </button>
                     </div>
