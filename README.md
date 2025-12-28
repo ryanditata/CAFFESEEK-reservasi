@@ -70,19 +70,7 @@ php artisan migrate
 php artisan db:seed
 ```
 
-### Step 5: Configure Midtrans
-
-Edit the `.env` file and add Midtrans configuration:
-
-```env
-MIDTRANS_SERVER_KEY=your-server-key
-MIDTRANS_CLIENT_KEY=your-client-key
-MIDTRANS_IS_PRODUCTION=false
-MIDTRANS_IS_SANITIZED=true
-MIDTRANS_IS_3DS=true
-```
-
-### Step 6: Build Assets
+### Step 5: Build Assets
 
 ```bash
 # Development
@@ -92,7 +80,7 @@ npm run dev
 npm run build
 ```
 
-### Step 7: Start Development Server
+### Step 6: Start Development Server
 
 ```bash
 # Laravel development server
@@ -104,18 +92,6 @@ npm run dev
 
 The application will be available at `http://localhost:5173/`
 
-### Midtrans Setup
-
-1. Register an account at [Midtrans](https://midtrans.com)
-2. Get your Server Key and Client Key
-3. Configure webhook URL for production: `yourdomain.com/checkout/notification`
-
-### Printer Setup (Optional)
-
-1. Connect thermal printer via USB
-2. Ensure printer is detected at `/dev/usb/lp0`
-3. Adjust printer path in `PrintController.php` if needed
-
 ### Environment Variables
 
 ```env
@@ -126,11 +102,6 @@ APP_URL=http://localhost:8000
 # Database
 DB_CONNECTION=sqlite
 DB_DATABASE=/absolute/path/to/database.sqlite
-
-# Midtrans Configuration
-MIDTRANS_SERVER_KEY=your-server-key
-MIDTRANS_CLIENT_KEY=your-client-key
-MIDTRANS_IS_PRODUCTION=false
 ```
 
 ## 🧪 Testing
