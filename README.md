@@ -5,8 +5,6 @@
 - **Laravel 12.x** - PHP Framework
 - **Inertia.js** - Modern monolith approach
 - **SQLite Database** - Lightweight database solution
-- **Midtrans SDK** - Payment gateway integration
-- **ESC/POS PHP** - Thermal printer integration
 
 ### Frontend
 
