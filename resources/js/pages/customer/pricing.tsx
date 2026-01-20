@@ -5,7 +5,7 @@ import { router } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 import Lenis from "@studio-freight/lenis";
 
-const ADMIN_WHATSAPP = '6288215297329';
+const ADMIN_WHATSAPP = '62895361206884';
 
 interface Feature {
     text: string;
