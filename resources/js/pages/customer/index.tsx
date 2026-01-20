@@ -892,7 +892,7 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
 
                             <div className="w-12 h-12 bg-[#2B2A2A] rounded-full flex items-center justify-center">
                                 <a
-                                    href="https://wa.me/6288215297329"
+                                    href="https://wa.me/62895361206884"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
@@ -925,12 +925,12 @@ export default function CustomerIndex({ cafes: initialCafes }: Props) {
                             <div>
                                 <p className="font-bold">Admin 1</p>
                                 <a
-                                    href="https://wa.me/6288215297329"
+                                    href="https://wa.me/62895361206884"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-white hover:text-[#BDEE63] transition-colors"
                                 >
-                                    088215297329
+                                    0895361206884
                                 </a>
                             </div>
                         </div>
